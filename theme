@@ -1,0 +1,178 @@
+#!/bin/bash
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+clear
+echo -e "${CYAN}=============================================="
+echo -e " Golden Hosting Enterprise - Theme Deployer v2"
+echo -e "==============================================${NC}"
+echo
+
+echo -e "${YELLOW}[1]${NC} Add background to default theme"
+echo -e "${YELLOW}[2]${NC} Install NookTheme + background"
+echo -e "${YELLOW}[3]${NC} Uninstall Theme / Restore backup"
+read -p "Choose [1-3]: " option
+
+if [[ "$option" == "3" ]]; then
+  WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
+  BACKUP="$WRAPPER.bak"
+  if [[ -f "$BACKUP" ]]; then
+    cp "$BACKUP" "$WRAPPER"
+    rm -f /var/www/pterodactyl/public/assets/custom-background.css
+    rm -f /var/www/pterodactyl/public/assets/media/custom_bg.*
+    php /var/www/pterodactyl/artisan view:clear
+    php /var/www/pterodactyl/artisan config:clear
+    php /var/www/pterodactyl/artisan up
+    systemctl restart nginx
+    echo -e "${GREEN}✅ Backup restored. Theme reverted.${NC}"
+  else
+    echo -e "${RED}❌ No backup found. Cannot restore.${NC}"
+  fi
+  exit
+fi
+
+read -p "Paste direct media (image/video) URL for background: " media_url
+if [[ -z "$media_url" ]]; then
+    echo -e "${RED}[ERROR] No media URL provided. Exiting.${NC}"
+    exit 1
+fi
+
+file_extension="${media_url##*.}"
+saved_filename="custom_bg.$file_extension"
+media_type="unknown"
+
+if [[ "$file_extension" == "jpg" || "$file_extension" == "jpeg" || "$file_extension" == "png" || "$file_extension" == "gif" ]]; then
+    media_type="image"
+elif [[ "$file_extension" == "mp4" || "$file_extension" == "webm" ]]; then
+    media_type="video"
+else
+    echo -e "${RED}[ERROR] Unsupported file type: .$file_extension. Only jpg, png, gif, mp4, webm are supported.${NC}"
+    exit 1
+fi
+echo -e "${CYAN}Detected media type: $media_type${NC}"
+
+mkdir -p /var/www/pterodactyl/public/assets/media
+wget -q "$media_url" -O "/var/www/pterodactyl/public/assets/media/$saved_filename"
+chmod 644 "/var/www/pterodactyl/public/assets/media/$saved_filename"
+
+CSS_FILE="/var/www/pterodactyl/public/assets/custom-background.css"
+if [[ "$media_type" == "image" ]]; then
+  cat <<EOF > "$CSS_FILE"
+body {
+  background: url('/assets/media/$saved_filename') no-repeat center center fixed;
+  background-size: cover;
+}
+EOF
+else
+  cat <<EOF > "$CSS_FILE"
+#dynamic-background-video {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  z-index: -10;
+  object-fit: cover;
+}
+body {
+    background-color: #000;
+}
+EOF
+fi
+
+inject_wrapper() {
+  WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
+  BACKUP="$WRAPPER.bak"
+  [[ ! -f "$BACKUP" ]] && cp "$WRAPPER" "$BACKUP"
+
+  TEMP_WRAPPER=$(mktemp)
+
+  cat <<'EOW' > "$TEMP_WRAPPER"
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{ config('app.name', 'Pterodactyl') }}</title>
+        @section('meta')
+            <meta charset="utf-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+            <meta name="csrf-token" content="{{ csrf_token() }}">
+            <link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+        @show
+        @section('user-data')
+            @if(!is_null(Auth::user()))
+                <script>
+                    window.PterodactylUser = {!! json_encode(Auth::user()->toVueObject()) !!};
+                </script>
+            @endif
+        @show
+        <style>
+            @import url('//fonts.googleapis.com/css?family=Rubik:300,400,500&display=swap');
+        </style>
+        @yield('assets')
+        @include('layouts.scripts')
+        <link rel="stylesheet" href="/assets/custom-background.css">
+    </head>
+    <body class="{{ $css['body'] ?? 'bg-neutral-50' }}">
+EOW
+
+  if [[ "$media_type" == "video" ]]; then
+    cat <<EOF >> "$TEMP_WRAPPER"
+        <video autoplay muted loop id="dynamic-background-video">
+            <source src="/assets/media/$saved_filename" type="video/$file_extension">
+        </video>
+EOF
+  fi
+
+  cat <<'EOW' >> "$TEMP_WRAPPER"
+        @section('content')
+            @yield('above-container')
+            @yield('container')
+            @yield('below-container')
+            <footer style="text-align:center; padding:1em; font-size: 0.9em; color:#ccc;">
+                All rights reserved by Golden Hosting Enterprise © 2025
+            </footer>
+        @show
+        @section('scripts')
+            {!! $asset->js('main.js') !!}
+        @show
+    </body>
+</html>
+EOW
+
+  mv "$TEMP_WRAPPER" "$WRAPPER"
+}
+
+if [[ "$option" == "1" ]]; then
+  echo -e "${CYAN}Injecting background into default theme...${NC}"
+  inject_wrapper
+else
+  echo -e "${CYAN}Installing NookTheme...${NC}"
+  cd /var/www/pterodactyl
+  php artisan down
+  curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
+  chmod -R 755 storage/* bootstrap/cache
+  composer install --no-dev --optimize-autoloader
+  php artisan migrate --seed --force
+  php artisan view:clear
+  php artisan config:clear
+  php artisan queue:restart
+  php artisan up
+  chown -R www-data:www-data .
+  echo -e "${CYAN}Injecting background into NookTheme...${NC}"
+  inject_wrapper
+fi
+
+cd /var/www/pterodactyl
+php artisan view:clear
+php artisan config:clear
+php artisan up
+systemctl restart nginx
+
+echo -e "${GREEN}✅ Theme deployment complete.${NC}"
