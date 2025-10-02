@@ -79,6 +79,9 @@ inject_wrapper() {
     VIDEO_TAG="<video autoplay muted loop id=\"dynamic-background-video\"><source src=\"/assets/media/$saved_filename\" type=\"video/$file_extension\"></video>"
     sed -i "/<body/a\        $VIDEO_TAG" "$WRAPPER"
   fi
+
+  FOOTER_HTML="<footer style=\"text-align:center; padding:1em; font-size: 0.9em; color:#ccc;\">All rights reserved by Golden Hosting Enterprise © 2025</footer>"
+  sed -i "/@yield('below-container')/a\        $FOOTER_HTML" "$WRAPPER"
 }
 
 if [[ "$option" == "1" ]]; then
@@ -104,4 +107,4 @@ php artisan config:clear
 php artisan up
 systemctl restart nginx
 
-echo -e "${GREEN}雪 Theme deployment complete.${NC}"
+echo -e "${GREEN}雪  Theme deployment complete.${NC}"
