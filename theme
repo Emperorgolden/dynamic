@@ -10,7 +10,7 @@ NC='\033[0m'
 
 clear
 echo -e "${CYAN}=============================================="
-echo -e " Golden Hosting Enterprise - Theme Deployer v2.1"
+echo -e " Golden Hosting Enterprise - Theme Deployer v2"
 echo -e "==============================================${NC}"
 echo
 
@@ -23,13 +23,13 @@ if [[ "$option" == "3" ]]; then
   WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
   BACKUP="$WRAPPER.bak"
   if [[ -f "$BACKUP" ]]; then
-    cp "$BACKUP" "$WRAPPER"
+    mv "$BACKUP" "$WRAPPER"
     rm -f /var/www/pterodactyl/public/assets/custom-background.css
     rm -rf /var/www/pterodactyl/public/assets/media
     php /var/www/pterodactyl/artisan view:clear
-    echo -e "${GREEN}✅ Backup restored. Theme reverted.${NC}"
+    echo -e "${GREEN}雪 Backup restored. Theme reverted.${NC}"
   else
-    echo -e "${RED}❌ No backup found. Cannot restore.${NC}"
+    echo -e "${RED}雪 No backup found. Cannot restore.${NC}"
   fi
   exit
 fi
@@ -59,37 +59,25 @@ wget -q "$media_url" -O "/var/www/pterodactyl/public/assets/media/$saved_filenam
 CSS_FILE="/var/www/pterodactyl/public/assets/custom-background.css"
 if [[ "$media_type" == "image" ]]; then
   cat <<EOF > "$CSS_FILE"
-body { background: url('/assets/media/$saved_filename') no-repeat center center fixed; background-size: cover; }
+body { background: url('/assets/media/$saved_filename') no-repeat center center fixed !important; background-size: cover !important; }
 EOF
 else
   cat <<EOF > "$CSS_FILE"
 #dynamic-background-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -10; object-fit: cover; }
-body { background-color: #000; }
+body { background-color: #000 !important; }
 EOF
 fi
 
-# SAFER INJECTOR FUNCTION
 inject_wrapper() {
   WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
   BACKUP="$WRAPPER.bak"
   [[ ! -f "$BACKUP" ]] && cp "$WRAPPER" "$BACKUP"
 
-  # Choose which complete template to use
-  if [[ "$media_type" == "image" ]]; then
-    # Use the complete, safe template for images
-    cat <<'EOW' > "$WRAPPER"
-<!DOCTYPE html>
-<html><head><title>{{ config('app.name', 'Pterodactyl') }}</title>@section('meta')<meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport"><meta name="csrf-token" content="{{ csrf_token() }}"><link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">@show @section('user-data')@if(!is_null(Auth::user()))<script>window.PterodactylUser = {!! json_encode(Auth::user()->toVueObject()) !!};</script>@endif @show <style>@import url('//fonts.googleapis.com/css?family=Rubik:300,400,500&display=swap');</style>@yield('assets')@include('layouts.scripts')<link rel="stylesheet" href="/assets/custom-background.css"></head><body class="{{ $css['body'] ?? 'bg-neutral-50' }}">@section('content')@yield('above-container')@yield('container')@yield('below-container')<footer style="text-align:center; padding:1em; font-size: 0.9em; color:#ccc;">All rights reserved by Golden Hosting Enterprise © 2025</footer>@show @section('scripts'){!! $asset->js('main.js') !!}@show</body></html>
-EOW
-  else
-    # Use the complete, safe template for videos
-    cat <<'EOW' > "$WRAPPER"
-<!DOCTYPE html>
-<html><head><title>{{ config('app.name', 'Pterodactyl') }}</title>@section('meta')<meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport"><meta name="csrf-token" content="{{ csrf_token() }}"><link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">@show @section('user-data')@if(!is_null(Auth::user()))<script>window.PterodactylUser = {!! json_encode(Auth::user()->toVueObject()) !!};</script>@endif @show <style>@import url('//fonts.googleapis.com/css?family=Rubik:300,400,500&display=swap');</style>@yield('assets')@include('layouts.scripts')<link rel="stylesheet" href="/assets/custom-background.css"></head><body class="{{ $css['body'] ?? 'bg-neutral-50' }}"><video autoplay muted loop id="dynamic-background-video"><source src="/assets/media/{{saved_filename}}" type="video/{{file_extension}}"></video>@section('content')@yield('above-container')@yield('container')@yield('below-container')<footer style="text-align:center; padding:1em; font-size: 0.9em; color:#ccc;">All rights reserved by Golden Hosting Enterprise © 2025</footer>@show @section('scripts'){!! $asset->js('main.js') !!}@show</body></html>
-EOW
-    # This is a bit of a hack to replace variables AFTER the fact, which is safer
-    sed -i "s/{{saved_filename}}/$saved_filename/g" "$WRAPPER"
-    sed -i "s/{{file_extension}}/$file_extension/g" "$WRAPPER"
+  sed -i "/<\/head>/i\        <link rel=\"stylesheet\" href=\"/assets/custom-background.css\">" "$WRAPPER"
+
+  if [[ "$media_type" == "video" ]]; then
+    VIDEO_TAG="<video autoplay muted loop id=\"dynamic-background-video\"><source src=\"/assets/media/$saved_filename\" type=\"video/$file_extension\"></video>"
+    sed -i "/<body/a\        $VIDEO_TAG" "$WRAPPER"
   fi
 }
 
@@ -116,4 +104,4 @@ php artisan config:clear
 php artisan up
 systemctl restart nginx
 
-echo -e "${GREEN}✅ Theme deployment complete.${NC}"
+echo -e "${GREEN}雪 Theme deployment complete.${NC}"
