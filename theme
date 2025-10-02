@@ -10,7 +10,7 @@ NC='\033[0m'
 
 clear
 echo -e "${CYAN}=============================================="
-echo -e " Golden Hosting Enterprise - Theme Deployer v2"
+echo -e " Golden Hosting Enterprise - Theme Deployer v2.1"
 echo -e "==============================================${NC}"
 echo
 
@@ -25,11 +25,8 @@ if [[ "$option" == "3" ]]; then
   if [[ -f "$BACKUP" ]]; then
     cp "$BACKUP" "$WRAPPER"
     rm -f /var/www/pterodactyl/public/assets/custom-background.css
-    rm -f /var/www/pterodactyl/public/assets/media/custom_bg.*
+    rm -rf /var/www/pterodactyl/public/assets/media
     php /var/www/pterodactyl/artisan view:clear
-    php /var/www/pterodactyl/artisan config:clear
-    php /var/www/pterodactyl/artisan up
-    systemctl restart nginx
     echo -e "${GREEN}✅ Backup restored. Theme reverted.${NC}"
   else
     echo -e "${RED}❌ No backup found. Cannot restore.${NC}"
@@ -52,108 +49,53 @@ if [[ "$file_extension" == "jpg" || "$file_extension" == "jpeg" || "$file_extens
 elif [[ "$file_extension" == "mp4" || "$file_extension" == "webm" ]]; then
     media_type="video"
 else
-    echo -e "${RED}[ERROR] Unsupported file type: .$file_extension. Only jpg, png, gif, mp4, webm are supported.${NC}"
+    echo -e "${RED}[ERROR] Unsupported file type.${NC}"
     exit 1
 fi
-echo -e "${CYAN}Detected media type: $media_type${NC}"
 
 mkdir -p /var/www/pterodactyl/public/assets/media
 wget -q "$media_url" -O "/var/www/pterodactyl/public/assets/media/$saved_filename"
-chmod 644 "/var/www/pterodactyl/public/assets/media/$saved_filename"
 
 CSS_FILE="/var/www/pterodactyl/public/assets/custom-background.css"
 if [[ "$media_type" == "image" ]]; then
   cat <<EOF > "$CSS_FILE"
-body {
-  background: url('/assets/media/$saved_filename') no-repeat center center fixed;
-  background-size: cover;
-}
+body { background: url('/assets/media/$saved_filename') no-repeat center center fixed; background-size: cover; }
 EOF
 else
   cat <<EOF > "$CSS_FILE"
-#dynamic-background-video {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  min-width: 100%;
-  min-height: 100%;
-  z-index: -10;
-  object-fit: cover;
-}
-body {
-    background-color: #000;
-}
+#dynamic-background-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -10; object-fit: cover; }
+body { background-color: #000; }
 EOF
 fi
 
+# SAFER INJECTOR FUNCTION
 inject_wrapper() {
   WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
   BACKUP="$WRAPPER.bak"
   [[ ! -f "$BACKUP" ]] && cp "$WRAPPER" "$BACKUP"
 
-  TEMP_WRAPPER=$(mktemp)
-
-  cat <<'EOW' > "$TEMP_WRAPPER"
+  # Choose which complete template to use
+  if [[ "$media_type" == "image" ]]; then
+    # Use the complete, safe template for images
+    cat <<'EOW' > "$WRAPPER"
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>{{ config('app.name', 'Pterodactyl') }}</title>
-        @section('meta')
-            <meta charset="utf-8">
-            <meta http-equiv="X-UA-Compatible" content="IE=edge">
-            <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
-            <meta name="csrf-token" content="{{ csrf_token() }}">
-            <link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
-        @show
-        @section('user-data')
-            @if(!is_null(Auth::user()))
-                <script>
-                    window.PterodactylUser = {!! json_encode(Auth::user()->toVueObject()) !!};
-                </script>
-            @endif
-        @show
-        <style>
-            @import url('//fonts.googleapis.com/css?family=Rubik:300,400,500&display=swap');
-        </style>
-        @yield('assets')
-        @include('layouts.scripts')
-        <link rel="stylesheet" href="/assets/custom-background.css">
-    </head>
-    <body class="{{ $css['body'] ?? 'bg-neutral-50' }}">
+<html><head><title>{{ config('app.name', 'Pterodactyl') }}</title>@section('meta')<meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport"><meta name="csrf-token" content="{{ csrf_token() }}"><link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">@show @section('user-data')@if(!is_null(Auth::user()))<script>window.PterodactylUser = {!! json_encode(Auth::user()->toVueObject()) !!};</script>@endif @show <style>@import url('//fonts.googleapis.com/css?family=Rubik:300,400,500&display=swap');</style>@yield('assets')@include('layouts.scripts')<link rel="stylesheet" href="/assets/custom-background.css"></head><body class="{{ $css['body'] ?? 'bg-neutral-50' }}">@section('content')@yield('above-container')@yield('container')@yield('below-container')<footer style="text-align:center; padding:1em; font-size: 0.9em; color:#ccc;">All rights reserved by Golden Hosting Enterprise © 2025</footer>@show @section('scripts'){!! $asset->js('main.js') !!}@show</body></html>
 EOW
-
-  if [[ "$media_type" == "video" ]]; then
-    cat <<EOF >> "$TEMP_WRAPPER"
-        <video autoplay muted loop id="dynamic-background-video">
-            <source src="/assets/media/$saved_filename" type="video/$file_extension">
-        </video>
-EOF
+  else
+    # Use the complete, safe template for videos
+    cat <<'EOW' > "$WRAPPER"
+<!DOCTYPE html>
+<html><head><title>{{ config('app.name', 'Pterodactyl') }}</title>@section('meta')<meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport"><meta name="csrf-token" content="{{ csrf_token() }}"><link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">@show @section('user-data')@if(!is_null(Auth::user()))<script>window.PterodactylUser = {!! json_encode(Auth::user()->toVueObject()) !!};</script>@endif @show <style>@import url('//fonts.googleapis.com/css?family=Rubik:300,400,500&display=swap');</style>@yield('assets')@include('layouts.scripts')<link rel="stylesheet" href="/assets/custom-background.css"></head><body class="{{ $css['body'] ?? 'bg-neutral-50' }}"><video autoplay muted loop id="dynamic-background-video"><source src="/assets/media/{{saved_filename}}" type="video/{{file_extension}}"></video>@section('content')@yield('above-container')@yield('container')@yield('below-container')<footer style="text-align:center; padding:1em; font-size: 0.9em; color:#ccc;">All rights reserved by Golden Hosting Enterprise © 2025</footer>@show @section('scripts'){!! $asset->js('main.js') !!}@show</body></html>
+EOW
+    # This is a bit of a hack to replace variables AFTER the fact, which is safer
+    sed -i "s/{{saved_filename}}/$saved_filename/g" "$WRAPPER"
+    sed -i "s/{{file_extension}}/$file_extension/g" "$WRAPPER"
   fi
-
-  cat <<'EOW' >> "$TEMP_WRAPPER"
-        @section('content')
-            @yield('above-container')
-            @yield('container')
-            @yield('below-container')
-            <footer style="text-align:center; padding:1em; font-size: 0.9em; color:#ccc;">
-                All rights reserved by Golden Hosting Enterprise © 2025
-            </footer>
-        @show
-        @section('scripts')
-            {!! $asset->js('main.js') !!}
-        @show
-    </body>
-</html>
-EOW
-
-  mv "$TEMP_WRAPPER" "$WRAPPER"
 }
 
 if [[ "$option" == "1" ]]; then
-  echo -e "${CYAN}Injecting background into default theme...${NC}"
   inject_wrapper
 else
-  echo -e "${CYAN}Installing NookTheme...${NC}"
   cd /var/www/pterodactyl
   php artisan down
   curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
@@ -165,7 +107,6 @@ else
   php artisan queue:restart
   php artisan up
   chown -R www-data:www-data .
-  echo -e "${CYAN}Injecting background into NookTheme...${NC}"
   inject_wrapper
 fi
 
