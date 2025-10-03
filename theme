@@ -10,7 +10,7 @@ NC='\033[0m'
 
 clear
 echo -e "${CYAN}=============================================="
-echo -e " Golden Hosting Enterprise - Theme Deployer v5.2"
+echo -e " Golden Hosting Enterprise - Theme Deployer v2"
 echo -e "==============================================${NC}"
 echo
 
@@ -134,4 +134,3 @@ php artisan up
 systemctl restart nginx
 
 echo -e "${GREEN}雪 Theme deployment complete.${NC}"
- deployment complete.${NC}"
