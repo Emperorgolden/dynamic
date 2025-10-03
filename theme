@@ -44,7 +44,7 @@ if [[ "$option" == "3" ]]; then
   if [[ -f "$BACKUP" ]]; then mv "$BACKUP" "$WRAPPER"; fi
   rm -f /var/www/pterodactyl/public/assets/custom-background.css
   rm -rf /var/www/pterodactyl/public/assets/media
-  cd /var/w ww/pterodactyl
+  cd /var/www/pterodactyl
   php artisan view:clear
   systemctl restart nginx
   echo -e "${GREEN}雪 Backup restored. Theme reverted.${NC}"
@@ -73,8 +73,8 @@ FINAL_FILE="$MEDIA_DIR/custom_bg.webm"
 wget -q --show-progress "$media_url" -O "$ORIGINAL_FILE"
 
 if [[ "$media_type" == "video" ]]; then
-    echo -e "${CYAN}Compressing video... This may take a long time!${NC}"
-    ffmpeg -i "$ORIGINAL_FILE" -vf "scale=-1:720" -c:v libvpx-vp9 -b:v 1M -crf 30 -deadline good -an -y "$FINAL_FILE"
+    echo -e "${CYAN}Compressing video with better quality... This may take a long time!${NC}"
+    ffmpeg -i "$ORIGINAL_FILE" -vf "scale=-1:720" -c:v libvpx-vp9 -b:v 2M -crf 28 -deadline good -an -y "$FINAL_FILE"
     rm "$ORIGINAL_FILE"
     saved_filename="custom_bg.webm"
     file_extension="webm"
@@ -109,23 +109,9 @@ inject_wrapper() {
 }
 
 if [[ "$option" == "1" ]]; then
-  echo -e "${CYAN}Injecting background into default theme...${NC}"
   inject_wrapper
 elif [[ "$option" == "2" ]]; then
-  echo -e "${CYAN}Installing NookTheme...${NC}"
-  cd /var/www/pterodactyl
-  php artisan down
-  curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
-  chmod -R 755 storage/* bootstrap/cache
-  composer install --no-dev --optimize-autoloader
-  php artisan migrate --seed --force
-  php artisan view:clear
-  php artisan config:clear
-  php artisan queue:restart
-  php artisan up
-  chown -R www-data:www-data .
-  echo -e "${CYAN}Injecting background into NookTheme...${NC}"
-  inject_wrapper
+  cd /var/www/pterodactyl; php artisan down; curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv; chmod -R 755 storage/* bootstrap/cache; composer install --no-dev --optimize-autoloader; php artisan migrate --seed --force; php artisan view:clear; php artisan config:clear; php artisan queue:restart; php artisan up; chown -R www-data:www-data .; inject_wrapper
 fi
 
 cd /var/www/pterodactyl
