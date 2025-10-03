@@ -10,16 +10,32 @@ NC='\033[0m'
 
 clear
 echo -e "${CYAN}=============================================="
-echo -e " Golden Hosting Enterprise - Theme Deployer v5 (Expert)"
+echo -e " Golden Hosting Enterprise - Theme Deployer v2"
 echo -e "==============================================${NC}"
 echo
 
 if ! command -v ffmpeg &> /dev/null
 then
-    echo -e "${RED}雪 ERROR: ffmpeg is not installed. This script cannot continue."
-    echo -e "Please install it by running: sudo apt update && sudo apt install ffmpeg${NC}"
-    exit 1
+    echo -e "${YELLOW}雪  ffmpeg is not installed.${NC}"
+    read -p "This is required to compress videos. Do you want to install it now? (y/N): " install_ffmpeg
+    if [[ "$install_ffmpeg" == "y" || "$install_ffmpeg" == "Y" ]]; then
+        echo -e "${CYAN}Installing ffmpeg... This may take a moment and might ask for your password.${NC}"
+        if [[ $EUID -ne 0 ]]; then
+           SUDO_CMD="sudo"
+        else
+           SUDO_CMD=""
+        fi
+        $SUDO_CMD apt-get update
+        $SUDO_CMD apt-get install -y ffmpeg
+        echo -e "${GREEN}雪 ffmpeg has been successfully installed.${NC}"
+    else
+        echo -e "${RED}雪 Operation cancelled. ffmpeg is required to continue.${NC}"
+        exit 1
+    fi
+else
+    echo -e "${GREEN}雪 ffmpeg is already installed. Continuing...${NC}"
 fi
+echo
 
 echo -e "${YELLOW}[1]${NC} Add background to default theme"
 echo -e "${YELLOW}[3]${NC} Uninstall Theme / Restore backup"
@@ -28,9 +44,7 @@ read -p "Choose [1] or [3]: " option
 if [[ "$option" == "3" ]]; then
   WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
   BACKUP="$WRAPPER.bak"
-  if [[ -f "$BACKUP" ]]; then
-    mv "$BACKUP" "$WRAPPER"
-  fi
+  if [[ -f "$BACKUP" ]]; then mv "$BACKUP" "$WRAPPER"; fi
   rm -f /var/www/pterodactyl/public/assets/custom-background.css
   rm -rf /var/www/pterodactyl/public/assets/media
   cd /var/www/pterodactyl
