@@ -74,7 +74,7 @@ wget -q --show-progress "$media_url" -O "$ORIGINAL_FILE"
 
 if [[ "$media_type" == "video" ]]; then
     echo -e "${CYAN}Compressing video with better quality... This may take a long time!${NC}"
-    ffmpeg -i "$ORIGINAL_FILE" -vf "scale=-1:720" -c:v libvpx-vp9 -b:v 2M -crf 28 -deadline good -an -y "$FINAL_FILE"
+    ffmpeg -i "$ORIGINAL_FILE" -vf "scale=-1:1080" -c:v libvpx-vp9 -b:v 2M -crf 28 -deadline good -an -y "$FINAL_FILE"
     rm "$ORIGINAL_FILE"
     saved_filename="custom_bg.webm"
     file_extension="webm"
