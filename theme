@@ -1,7 +1,5 @@
 #!/bin/bash
-
 set -e
-
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -14,14 +12,13 @@ echo -e " Golden Hosting Enterprise - Theme Deployer v2"
 echo -e "==============================================${NC}"
 echo
 
-if ! command -v ffmpeg &> /dev/null
-then
+if ! command -v ffmpeg &> /dev/null; then
     echo -e "${YELLOW}雪  ffmpeg is not installed.${NC}"
     read -p "This is required to compress videos. Do you want to install it now? (y/N): " install_ffmpeg
-    if [[ "$install_ffmpeg" == "y" || "$install_ffmpeg" == "Y" ]]; then
+    if [[ "$install_ffmpeg" =~ ^[Yy]$ ]]; then
         echo -e "${CYAN}Installing ffmpeg...${NC}"
         if [[ $EUID -ne 0 ]]; then SUDO_CMD="sudo"; else SUDO_CMD=""; fi
-        $SUDO_CMD apt-get update
+        $SUDO_CMD apt-get update -y
         $SUDO_CMD apt-get install -y ffmpeg
         echo -e "${GREEN}雪 ffmpeg has been successfully installed.${NC}"
     else
@@ -48,34 +45,40 @@ if [[ "$option" == "3" ]]; then
   php artisan view:clear
   systemctl restart nginx
   echo -e "${GREEN}雪 Backup restored. Theme reverted.${NC}"
-  exit
+  exit 0
 fi
 
 read -p "Paste direct media (image/video) URL for background: " media_url
-if [[ -z "$media_url" ]]; then exit 1; fi
+if [[ -z "$media_url" ]]; then
+  echo -e "${RED}[ERROR] No URL provided.${NC}"
+  exit 1
+fi
 
 file_extension="${media_url##*.}"
 media_type="unknown"
 
-if [[ "$file_extension" == "jpg" || "$file_extension" == "jpeg" || "$file_extension" == "png" || "$file_extension" == "gif" ]]; then
-    media_type="image"
-elif [[ "$file_extension" == "mp4" || "$file_extension" == "webm" || "$file_extension" == "mov" ]]; then
-    media_type="video"
-else
-    echo -e "${RED}[ERROR] Unsupported file type.${NC}"; exit 1
-fi
+case "$file_extension" in
+  jpg|jpeg|png|gif) media_type="image" ;;
+  mp4|webm|mov) media_type="video" ;;
+  *) echo -e "${RED}[ERROR] Unsupported file type.${NC}"; exit 1 ;;
+esac
 
 MEDIA_DIR="/var/www/pterodactyl/public/assets/media"
 mkdir -p "$MEDIA_DIR"
 ORIGINAL_FILE="$MEDIA_DIR/original.$file_extension"
 FINAL_FILE="$MEDIA_DIR/custom_bg.webm"
 
+echo -e "${CYAN}Downloading media...${NC}"
 wget -q --show-progress "$media_url" -O "$ORIGINAL_FILE"
 
 if [[ "$media_type" == "video" ]]; then
-    echo -e "${CYAN}Compressing video with better quality... This may take a long time!${NC}"
-    ffmpeg -i "$ORIGINAL_FILE" -vf "scale=-1:2160" -c:v libvpx-vp9 -b:v 2M -crf 28 -deadline good -an -y "$FINAL_FILE"
-    rm "$ORIGINAL_FILE"
+    echo -e "${CYAN}Compressing video with balanced quality & size (VP9 codec)...${NC}"
+    ffmpeg -i "$ORIGINAL_FILE" \
+      -vf "scale=-1:1080" \
+      -c:v libvpx-vp9 -crf 23 -b:v 0 \
+      -row-mt 1 -threads 4 -deadline good \
+      -an -y "$FINAL_FILE"
+    rm -f "$ORIGINAL_FILE"
     saved_filename="custom_bg.webm"
     file_extension="webm"
 else
@@ -86,11 +89,22 @@ fi
 CSS_FILE="/var/www/pterodactyl/public/assets/custom-background.css"
 if [[ "$media_type" == "image" ]]; then
   cat <<EOF > "$CSS_FILE"
-body { background: url('/assets/media/$saved_filename') no-repeat center center fixed !important; background-size: cover !important; }
+body {
+  background: url('/assets/media/$saved_filename') no-repeat center center fixed !important;
+  background-size: cover !important;
+}
 EOF
 else
   cat <<EOF > "$CSS_FILE"
-#dynamic-background-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -10; object-fit: cover; }
+#dynamic-background-video {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  z-index: -10;
+  object-fit: cover;
+}
 body { background-color: #000 !important; }
 EOF
 fi
@@ -99,19 +113,36 @@ inject_wrapper() {
   WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
   BACKUP="$WRAPPER.bak"
   [[ ! -f "$BACKUP" ]] && cp "$WRAPPER" "$BACKUP"
-  sed -i "/<\/head>/i\        <link rel=\"stylesheet\" href=\"/assets/custom-background.css\">" "$WRAPPER"
+  if ! grep -q "custom-background.css" "$WRAPPER"; then
+    sed -i "/<\/head>/i\        <link rel=\"stylesheet\" href=\"/assets/custom-background.css\">" "$WRAPPER"
+  fi
   if [[ "$media_type" == "video" ]]; then
     VIDEO_TAG="<video autoplay muted loop id=\"dynamic-background-video\"><source src=\"/assets/media/$saved_filename\" type=\"video/webm\"></video>"
-    sed -i "/<body/a\        $VIDEO_TAG" "$WRAPPER"
+    if ! grep -q "dynamic-background-video" "$WRAPPER"; then
+      sed -i "/<body/a\        $VIDEO_TAG" "$WRAPPER"
+    fi
   fi
   FOOTER_HTML="<footer style=\"text-align:center; padding:1em; font-size: 0.9em; color:#ccc;\">All rights reserved by Golden Hosting Enterprise © 2025</footer>"
-  sed -i "/@yield('below-container')/a\        $FOOTER_HTML" "$WRAPPER"
+  if ! grep -q "Golden Hosting Enterprise" "$WRAPPER"; then
+    sed -i "/@yield('below-container')/a\        $FOOTER_HTML" "$WRAPPER"
+  fi
 }
 
 if [[ "$option" == "1" ]]; then
   inject_wrapper
 elif [[ "$option" == "2" ]]; then
-  cd /var/www/pterodactyl; php artisan down; curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv; chmod -R 755 storage/* bootstrap/cache; composer install --no-dev --optimize-autoloader; php artisan migrate --seed --force; php artisan view:clear; php artisan config:clear; php artisan queue:restart; php artisan up; chown -R www-data:www-data .; inject_wrapper
+  cd /var/www/pterodactyl
+  php artisan down
+  curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
+  chmod -R 755 storage/* bootstrap/cache
+  composer install --no-dev --optimize-autoloader
+  php artisan migrate --seed --force
+  php artisan view:clear
+  php artisan config:clear
+  php artisan queue:restart
+  php artisan up
+  chown -R www-data:www-data .
+  inject_wrapper
 fi
 
 cd /var/www/pterodactyl
