@@ -60,7 +60,9 @@ case "$file_extension" in
 esac
 
 MEDIA_DIR="/var/www/pterodactyl/public/assets/media"
-mkdir -p "$MEDIA_DIR"
+CSS_DIR="/var/www/pterodactyl/public/assets/css"
+mkdir -p "$MEDIA_DIR" "$CSS_DIR"
+
 ORIGINAL_FILE="$MEDIA_DIR/original.$file_extension"
 FINAL_FILE="$MEDIA_DIR/custom_bg.webm"
 
@@ -82,7 +84,7 @@ else
     saved_filename="custom_bg.$file_extension"
 fi
 
-CSS_FILE="/var/www/pterodactyl/public/assets/custom-background.css"
+CSS_FILE="$CSS_DIR/custom-background.css"
 if [[ "$media_type" == "image" ]]; then
   cat <<EOF > "$CSS_FILE"
 body {
@@ -105,7 +107,7 @@ body { background-color: #000 !important; }
 EOF
 fi
 
-LOGIN_CSS="/var/www/pterodactyl/public/assets/css/login-theme.css"
+LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
 .login-card {
     width: 350px;
@@ -154,7 +156,7 @@ inject_wrapper() {
   BACKUP="$WRAPPER.bak"
   [[ ! -f "$BACKUP" ]] && cp "$WRAPPER" "$BACKUP"
 
-  grep -q "custom-background.css" "$WRAPPER" || sed -i "/<\/head>/i\        <link rel=\"stylesheet\" href=\"/assets/custom-background.css\">" "$WRAPPER"
+  grep -q "custom-background.css" "$WRAPPER" || sed -i "/<\/head>/i\        <link rel=\"stylesheet\" href=\"/assets/css/custom-background.css\">" "$WRAPPER"
   grep -q "login-theme.css" "$WRAPPER" || sed -i "/<\/head>/i\        <link rel=\"stylesheet\" href=\"/assets/css/login-theme.css\">" "$WRAPPER"
 
   if [[ "$media_type" == "video" ]]; then
@@ -188,4 +190,4 @@ php artisan view:clear
 php artisan up
 systemctl restart nginx
 
-echo -e "${GREEN}雪 Theme deployment complete.${NC}"
+echo -e "${GREEN}雪 Theme deployment complete. Login page now has liquid glass effect.${NC}"
