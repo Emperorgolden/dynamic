@@ -109,25 +109,32 @@ fi
 
 LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
-/* --- STEP 1: Make parent containers invisible --- */
-.login-panel, 
+.login-panel,
 body[class*="LoginPageContainer"] .pt-8 > .w-full {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
-
-/* --- STEP 2: Style the ONE correct login box with the glass effect --- */
 form[action$="/login"] {
+    position: relative;
+    background: transparent !important;
     padding: 2.5rem;
+    overflow: hidden;
     border-radius: 1rem;
-    background: rgba(35, 35, 45, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+}
+form[action$="/login"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    background: rgba(35, 35, 45, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-/* --- STEP 3: Style the elements inside the glass box --- */
 form[action$="/login"] img {
     display: block;
     margin-left: auto;
@@ -145,7 +152,7 @@ form[action$="/login"] input[type=password] {
     color: #FFFFFF !important;
 }
 form[action$="/login"] button[type=submit] {
-    background: #0d6efd !important; /* The solid blue color */
+    background: #0d6efd !important;
     color: white !important;
     transition: background 0.2s ease !important;
 }
