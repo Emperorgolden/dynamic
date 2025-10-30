@@ -109,60 +109,55 @@ fi
 
 LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
-body[class*="LoginPageContainer"] .pt-8 > .w-full,
-.login-panel {
+/* --- STEP 1: Make parent containers invisible --- */
+.login-panel, 
+body[class*="LoginPageContainer"] .pt-8 > .w-full {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
-div[class*="LoginFormContainer"],
+
+/* --- STEP 2: Style the ONE correct login box with the glass effect --- */
 form[action$="/login"] {
-    width: 400px;
     padding: 2.5rem;
-    border-radius: 16px;
-    background: rgba(25, 25, 35, 0.5);
+    border-radius: 1rem;
+    background: rgba(35, 35, 45, 0.6);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
-div[class*="LoginFormContainer"] img,
+
+/* --- STEP 3: Style the elements inside the glass box --- */
 form[action$="/login"] img {
     display: block;
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 1.5rem;
 }
-div[class*="LoginFormContainer"] input,
+form[action$="/login"] label {
+    color: #e0e0e0 !important;
+}
 form[action$="/login"] input[type=email],
 form[action$="/login"] input[type=text],
 form[action$="/login"] input[type=password] {
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(0, 0, 0, 0.25) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     color: #FFFFFF !important;
-    border-radius: 10px !important;
 }
-div[class*="LoginFormContainer"] input::placeholder,
-form[action$="/login"] input::placeholder {
-    color: #CCCCCC !important;
-}
-div[class*="LoginFormContainer"] button[type="submit"],
 form[action$="/login"] button[type=submit] {
-    background: #0d6efd !important;
-    border-radius: 10px !important;
-    transition: background 0.2s ease, transform 0.2s ease !important;
+    background: #0d6efd !important; /* The solid blue color */
+    color: white !important;
+    transition: background 0.2s ease !important;
 }
-div[class*="LoginFormContainer"] button[type="submit"]:hover,
 form[action$="/login"] button[type=submit]:hover {
     background: #0b5ed7 !important;
-    transform: translateY(-2px);
 }
-div[class*="LoginFormContainer"] a,
 form[action$="/login"] a {
-    color: #b0b0b0 !important;
-    transition: color 0.2s ease;
+    color: #c0c0c0 !important;
+    text-align: center;
+    display: block;
+    margin-top: 1rem;
 }
-div[class*="LoginFormContainer"] a:hover,
 form[action$="/login"] a:hover {
     color: #FFFFFF !important;
 }
