@@ -9,7 +9,7 @@ NC='\033[0m'
 
 clear
 echo -e "${CYAN}=============================================="
-echo -e " Golden Hosting Enterprise - Theme Deployer v2"
+echo -e " Golden Hosting Enterprise dynamic theme deployer."
 echo -e "==============================================${NC}"
 echo
 
@@ -25,29 +25,14 @@ if ! command -v ffmpeg &> /dev/null; then
         echo -e "${RED}雪 Operation cancelled.${NC}"
         exit 1
     fi
-else
-    echo -e "${GREEN}雪 ffmpeg is already installed.${NC}"
 fi
 
-echo
-echo -e "${YELLOW}[1]${NC} Add background to default theme"
-echo -e "${YELLOW}[2]${NC} Install NookTheme + background"
-echo -e "${YELLOW}[3]${NC} Uninstall Theme / Restore backup"
-read -p "Choose [1-3]: " option
-
-if [[ "$option" == "3" ]]; then
-    WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
-    BACKUP="$WRAPPER.bak"
-    [[ -f "$BACKUP" ]] && mv "$BACKUP" "$WRAPPER"
-    rm -f /var/www/pterodactyl/public/assets/custom-background.css
-    rm -rf /var/www/pterodactyl/public/assets/media
-    rm -f /var/www/pterodactyl/public/assets/css/login-theme.css
-    cd /var/www/pterodactyl
-    php artisan view:clear
-    systemctl restart nginx
-    echo -e "${GREEN}雪 Backup restored.${NC}"
-    exit 0
-fi
+WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
+BACKUP="$WRAPPER.bak"
+MEDIA_DIR="/var/www/pterodactyl/public/assets/media"
+CSS_DIR="/var/www/pterodactyl/public/assets/css"
+mkdir -p "$MEDIA_DIR" "$CSS_DIR"
+[[ ! -f "$BACKUP" ]] && cp "$WRAPPER" "$BACKUP"
 
 read -p "Paste direct media (image/video) URL for background: " media_url
 [[ -z "$media_url" ]] && { echo -e "${RED}[ERROR] No URL provided.${NC}"; exit 1; }
@@ -60,10 +45,6 @@ case "$file_extension" in
     *) echo -e "${RED}[ERROR] Unsupported file type.${NC}"; exit 1 ;;
 esac
 
-MEDIA_DIR="/var/www/pterodactyl/public/assets/media"
-CSS_DIR="/var/www/pterodactyl/public/assets/css"
-mkdir -p "$MEDIA_DIR" "$CSS_DIR"
-
 ORIGINAL_FILE="$MEDIA_DIR/original.$file_extension"
 FINAL_FILE="$MEDIA_DIR/custom_bg.webm"
 
@@ -72,11 +53,7 @@ wget -q --show-progress "$media_url" -O "$ORIGINAL_FILE"
 
 if [[ "$media_type" == "video" ]]; then
     echo -e "${CYAN}Converting video to 1080p WebM...${NC}"
-    ffmpeg -i "$ORIGINAL_FILE" \
-        -vf "scale=-1:1080" \
-        -c:v libvpx-vp9 -crf 23 -b:v 0 \
-        -row-mt 1 -threads 4 -deadline good \
-        -an -y "$FINAL_FILE"
+    ffmpeg -i "$ORIGINAL_FILE" -vf "scale=-1:1080" -c:v libvpx-vp9 -crf 23 -b:v 0 -row-mt 1 -threads 4 -deadline good -an -y "$FINAL_FILE"
     rm -f "$ORIGINAL_FILE"
     saved_filename="custom_bg.webm"
     file_extension="webm"
@@ -87,14 +64,14 @@ fi
 
 CSS_FILE="$CSS_DIR/custom-background.css"
 if [[ "$media_type" == "image" ]]; then
-    cat <<EOF > "$CSS_FILE"
+cat <<EOF > "$CSS_FILE"
 body {
     background: url('/assets/media/$saved_filename') no-repeat center center fixed !important;
     background-size: cover !important;
 }
 EOF
 else
-    cat <<EOF > "$CSS_FILE"
+cat <<EOF > "$CSS_FILE"
 #dynamic-background-video {
     position: fixed;
     right: 0;
@@ -171,42 +148,28 @@ form[action$="/login"] a:hover {
 EOF
 
 inject_wrapper() {
-    WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
-    BACKUP="$WRAPPER.bak"
-    [[ ! -f "$BACKUP" ]] && cp "$WRAPPER" "$BACKUP"
-
     grep -q "custom-background.css" "$WRAPPER" || sed -i "//i\        <link rel='stylesheet' href='/assets/css/custom-background.css'>" "$WRAPPER"
     grep -q "login-theme.css" "$WRAPPER" || sed -i "//i\        <link rel='stylesheet' href='/assets/css/login-theme.css'>" "$WRAPPER"
 
     if [[ "$media_type" == "video" ]]; then
-        VIDEO_TAG="<video autoplay muted loop id='dynamic-background-video'><source src='/assets/media/$saved_filename' type='video/webm'></video>"
-        grep -q "dynamic-background-video" "$WRAPPER" || sed -i "/<body/a\        $VIDEO_TAG" "$WRAPPER"
+        VIDEO_TAG="<video autoplay muted loop id='dynamic-background-video' style='position:fixed;top:0;left:0;width:100%;height:100%;z-index:-10;object-fit:cover;'><source src='/assets/media/$saved_filename' type='video/webm'></video>"
+        sed -i '/id="dynamic-background-video"/d' "$WRAPPER"
+        sed -i "/<body /a\\
+$VIDEO_TAG
+" "$WRAPPER"
     fi
 
     FOOTER_HTML="All rights reserved by Golden Hosting Enterprise © 2025"
     grep -q "Golden Hosting Enterprise" "$WRAPPER" || sed -i "/@yield('below-container')/a\        $FOOTER_HTML" "$WRAPPER"
 }
 
-if [[ "$option" == "1" ]]; then
-    inject_wrapper
-elif [[ "$option" == "2" ]]; then
-    cd /var/www/pterodactyl
-    php artisan down
-    curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
-    chmod -R 755 storage/* bootstrap/cache
-    composer install --no-dev --optimize-autoloader
-    php artisan migrate --seed --force
-    php artisan view:clear
-    php artisan config:clear
-    php artisan queue:restart
-    php artisan up
-    chown -R www-data:www-data .
-    inject_wrapper
-fi
+inject_wrapper
 
 cd /var/www/pterodactyl
 php artisan view:clear
-php artisan up
+php artisan config:clear
+php artisan cache:clear
+php artisan queue:restart
 systemctl restart nginx
 
 echo -e "${GREEN}雪 Theme deployment complete.${NC}"
