@@ -172,6 +172,9 @@ elif [[ "$option" == "2" ]]; then
     inject_wrapper
 fi
 
+echo -e "${CYAN}Setting correct permissions for assets...${NC}"
+chown -R www-data:www-data /var/www/pterodactyl/public/assets
+
 echo -e "${CYAN}Clearing cache and finalizing deployment...${NC}"
 cd /var/www/pterodactyl
 php artisan view:clear
