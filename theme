@@ -188,49 +188,37 @@ body { background-color: #000 !important; }
 EOF
 fi
 
-# --- Liquid Glass Login CSS (strong selectors so it actually hits the white card) ---
+# --- Liquid Glass Login CSS (NookTheme white-card fix included) ---
 log "Writing Liquid Glass login CSS..."
 LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
 /* =========================
-   GHE Liquid Glass Login
+   GHE Liquid Glass Login (Default + NookTheme)
    ========================= */
 
-/* Scope to login-ish pages/containers across Pterodactyl + NookTheme variants */
-body[class*="LoginPageContainer"],
-body:has(form[action*="login"]),
-body:has(form[action$="/auth/login"]),
-body:has(form[action$="/login"]) {}
-
-/* Remove default white blocks */
+/* Make page background transparent */
 .login-panel,
 .LoginFormContainer,
 .LoginPageContainer,
 body[class*="LoginPageContainer"] .pt-8 > .w-full,
 body[class*="LoginPageContainer"] .w-full,
-body[class*="LoginPageContainer"] .mx-auto,
-body[class*="LoginPageContainer"] .shadow,
-body[class*="LoginPageContainer"] .bg-white,
-body[class*="LoginPageContainer"] [class*="bg-white"],
-body[class*="LoginPageContainer"] [class*="shadow"] {
+body[class*="LoginPageContainer"] .mx-auto {
   background: transparent !important;
   box-shadow: none !important;
   border: none !important;
 }
 
-/* The “card” (apply to form AND common wrappers) */
-:where(
-  form[action$="/login"],
-  form[action$="/auth/login"],
-  form[action*="login"],
-  .login-panel,
-  .LoginFormContainer
-) {
+/* -------------------------
+   KEY FIX for NookTheme:
+   The white “card” is often a wrapper div (bg-white) around the form.
+   Apply glass to ANY element containing the login form.
+   ------------------------- */
+:where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"]):has(form[action*="login"]) {
   position: relative !important;
   overflow: hidden !important;
   border-radius: 22px !important;
 
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
   backdrop-filter: blur(18px) saturate(160%) !important;
   -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
 
@@ -240,18 +228,10 @@ body[class*="LoginPageContainer"] [class*="shadow"] {
     0 18px 50px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.20),
     inset 0 -1px 0 rgba(255, 255, 255, 0.06) !important;
-
-  padding: 2.25rem !important;
 }
 
-/* Glossy highlight */
-:where(
-  form[action$="/login"],
-  form[action$="/auth/login"],
-  form[action*="login"],
-  .login-panel,
-  .LoginFormContainer
-)::before {
+/* Glossy highlight / shine on wrapper */
+:where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"]):has(form[action*="login"])::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -262,14 +242,8 @@ body[class*="LoginPageContainer"] [class*="shadow"] {
     linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 45%, rgba(0,0,0,0.10) 100%);
 }
 
-/* Subtle noise */
-:where(
-  form[action$="/login"],
-  form[action$="/auth/login"],
-  form[action*="login"],
-  .login-panel,
-  .LoginFormContainer
-)::after {
+/* Subtle noise texture */
+:where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"]):has(form[action*="login"])::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -280,27 +254,17 @@ body[class*="LoginPageContainer"] [class*="shadow"] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
 }
 
-/* Logo */
-:where(form[action*="login"]) img {
-  display: block;
-  margin-inline: auto;
-  margin-bottom: 1.25rem;
-  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.25));
-}
-
-/* Text */
-:where(form[action*="login"], .login-panel, .LoginFormContainer) label {
-  color: rgba(255,255,255,0.90) !important;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.25);
+/* Make the form transparent so wrapper glass shows through */
+:where(form[action*="login"], form[action$="/login"], form[action$="/auth/login"]) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* Inputs */
-:where(form[action*="login"], .login-panel, .LoginFormContainer)
-input[type=email],
-:where(form[action*="login"], .login-panel, .LoginFormContainer)
-input[type=text],
-:where(form[action*="login"], .login-panel, .LoginFormContainer)
-input[type=password] {
+:where(form[action*="login"]) input[type=email],
+:where(form[action*="login"]) input[type=text],
+:where(form[action*="login"]) input[type=password] {
   background: rgba(0, 0, 0, 0.18) !important;
   border: 1px solid rgba(255, 255, 255, 0.22) !important;
   color: rgba(255,255,255,0.92) !important;
@@ -309,12 +273,12 @@ input[type=password] {
     inset 0 1px 0 rgba(255,255,255,0.12),
     0 10px 24px rgba(0,0,0,0.18);
 }
-:where(form[action*="login"], .login-panel, .LoginFormContainer) input::placeholder {
+:where(form[action*="login"]) input::placeholder {
   color: rgba(255,255,255,0.55) !important;
 }
 
 /* Button */
-:where(form[action*="login"], .login-panel, .LoginFormContainer) button[type=submit] {
+:where(form[action*="login"]) button[type=submit] {
   border-radius: 14px !important;
   background: rgba(13, 110, 253, 0.75) !important;
   border: 1px solid rgba(255,255,255,0.22) !important;
@@ -324,33 +288,26 @@ input[type=password] {
     inset 0 1px 0 rgba(255,255,255,0.22);
   transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease !important;
 }
-:where(form[action*="login"], .login-panel, .LoginFormContainer) button[type=submit]:hover {
+:where(form[action*="login"]) button[type=submit]:hover {
   background: rgba(13, 110, 253, 0.85) !important;
 }
-:where(form[action*="login"], .login-panel, .LoginFormContainer) button[type=submit]:active {
+:where(form[action*="login"]) button[type=submit]:active {
   transform: translateY(1px);
 }
 
-/* Links */
-:where(form[action*="login"], .login-panel, .LoginFormContainer) a {
-  color: rgba(255,255,255,0.70) !important;
-  text-align: center;
-  display: block;
-  margin-top: 1rem;
-}
-:where(form[action*="login"], .login-panel, .LoginFormContainer) a:hover {
-  color: rgba(255,255,255,0.95) !important;
-}
+/* Labels/links */
+:where(form[action*="login"]) label { color: rgba(255,255,255,0.90) !important; }
+:where(form[action*="login"]) a { color: rgba(255,255,255,0.75) !important; }
+:where(form[action*="login"]) a:hover { color: rgba(255,255,255,0.95) !important; }
 
-/* Mobile tweaks */
+/* Mobile */
 @media (max-width: 480px) {
-  :where(form[action*="login"], .login-panel, .LoginFormContainer) {
-    padding: 1.5rem !important;
+  :where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"]):has(form[action*="login"]) {
     border-radius: 18px !important;
   }
-  :where(form[action*="login"], .login-panel, .LoginFormContainer)::before,
-  :where(form[action*="login"], .login-panel, .LoginFormContainer)::after {
-    border-radius: 18px;
+  :where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"]):has(form[action*="login"])::before,
+  :where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"]):has(form[action*="login"])::after {
+    border-radius: 18px !important;
   }
 }
 EOF
