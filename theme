@@ -270,13 +270,13 @@ body:has(form[action*="login"]) [class*="bg-white"] {
 }
 
 /* =========================
-   INPUTS – the 2 white bars
+   INPUTS – the 2 bars
    ========================= */
 
 .glass-wrapper input,
 .glass-wrapper textarea,
 .glass-wrapper select {
-  background: rgba(255, 255, 255, 0.12) !important;       /* light frosted */
+  background: rgba(255, 255, 255, 0.06) !important;       /* more transparent */
   backdrop-filter: blur(18px) !important;
   -webkit-backdrop-filter: blur(18px) !important;
 
@@ -534,12 +534,16 @@ inject_wrapper() {
     ' "$WRAPPER" > "$WRAPPER.tmp" && mv "$WRAPPER.tmp" "$WRAPPER"
   fi
 
-  # Footer (KEEP THIS)
+  # Footer (idempotent – avoid duplicates)
   FOOTER_HTML="All rights reserved by Golden Hosting Enterprise © 2025 -2026"
-  if grep -q "@yield('below-container')" "$WRAPPER"; then
-    sed -i "/@yield('below-container')/a $FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" "$WRAPPER"
+  if grep -q "$FOOTER_HTML" "$WRAPPER"; then
+    log "Footer text already present, skipping footer injection."
   else
-    echo -e "\n$FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" >> "$WRAPPER"
+    if grep -q "@yield('below-container')" "$WRAPPER"; then
+      sed -i "/@yield('below-container')/a $FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" "$WRAPPER"
+    else
+      echo -e "\n$FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" >> "$WRAPPER"
+    fi
   fi
 
   log "Wrapper injection done."
