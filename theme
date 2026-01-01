@@ -199,24 +199,20 @@ body { background-color: #000 !important; }
 EOF
 fi
 
-# --- Liquid Glass Login CSS ---
+# --- Liquid Glass Login CSS (updated to target .glass-wrapper + inputs + button) ---
 log "Writing Liquid Glass login CSS..."
 LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
 /* =========================
    GHE Liquid Glass Login (Default + NookTheme)
-   Goal: remove white card + remove blue solid button + glass inputs/buttons
+   FINAL: glass card + glass inputs + glass button
+   using the .glass-wrapper you already have
    ========================= */
 
-/* Make page wrappers transparent (kills extra white backgrounds) */
+/* Kill any extra white cards around our form */
 .login-panel,
 .LoginFormContainer,
 .LoginPageContainer,
-body[class*="LoginPageContainer"] .pt-8 > .w-full,
-body[class*="LoginPageContainer"] .w-full,
-body[class*="LoginPageContainer"] .mx-auto,
-body[class*="LoginPageContainer"] .shadow,
-body[class*="LoginPageContainer"] [class*="shadow"],
 body[class*="LoginPageContainer"] .bg-white,
 body[class*="LoginPageContainer"] [class*="bg-white"],
 body:has(form[action*="login"]) .bg-white,
@@ -226,26 +222,25 @@ body:has(form[action*="login"]) [class*="bg-white"] {
   border: none !important;
 }
 
-/* KEY: make the actual “card wrapper” glass (NookTheme often uses a wrapper div around the form) */
-:where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"], .shadow, [class*="shadow"]):has(form[action*="login"]) {
-  position: relative !important;
-  overflow: hidden !important;
-  border-radius: 22px !important;
+/* Main glass card (your .glass-wrapper div) */
+.glass-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
 
-  background: rgba(255, 255, 255, 0.10) !important;
-  backdrop-filter: blur(18px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  background: rgba(15, 23, 42, 0.55); /* deep bluish grey glass */
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
 
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-
+  border: 1px solid rgba(255, 255, 255, 0.24);
   box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.35),
+    0 18px 50px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.20),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06) !important;
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Gloss highlight */
-:where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"], .shadow, [class*="shadow"]):has(form[action*="login"])::before {
+/* Gloss highlight on the card */
+.glass-wrapper::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -253,11 +248,11 @@ body:has(form[action*="login"]) [class*="bg-white"] {
   border-radius: 22px;
   background:
     radial-gradient(120% 70% at 20% 0%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 35%, rgba(255,255,255,0.00) 65%),
-    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 45%, rgba(0,0,0,0.10) 100%);
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 45%, rgba(0,0,0,0.18) 100%);
 }
 
 /* Noise texture */
-:where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"], .shadow, [class*="shadow"]):has(form[action*="login"])::after {
+.glass-wrapper::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -268,84 +263,111 @@ body:has(form[action*="login"]) [class*="bg-white"] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
 }
 
-/* Make the form itself transparent so the wrapper glass is visible */
-:where(form[action*="login"], form[action$="/login"], form[action$="/auth/login"]) {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+/* CONTENT inside .glass-wrapper sits above shine/noise */
+.glass-wrapper > * {
+  position: relative;
+  z-index: 10;
 }
 
-/* -------------------------
-   Inputs glass
-   ------------------------- */
-body:has(form[action*="login"]) input,
-body:has(form[action*="login"]) textarea,
-body:has(form[action*="login"]) select {
-  background: rgba(255, 255, 255, 0.12) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
+/* =========================
+   INPUTS – the 2 white bars
+   ========================= */
 
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  color: rgba(255,255,255,0.95) !important;
+.glass-wrapper input,
+.glass-wrapper textarea,
+.glass-wrapper select {
+  background: rgba(255, 255, 255, 0.12) !important;       /* light frosted */
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.38) !important;  /* bright glass border */
+  color: rgba(255,255,255,0.96) !important;
 
   border-radius: 14px !important;
-
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.25),
-    0 8px 24px rgba(0,0,0,0.25) !important;
+    inset 0 1px 0 rgba(255,255,255,0.32),
+    0 10px 26px rgba(0,0,0,0.34) !important;
+
+  font-size: 0.95rem;
 }
 
-body:has(form[action*="login"]) input::placeholder {
-  color: rgba(255,255,255,0.60) !important;
+.glass-wrapper input::placeholder {
+  color: rgba(255,255,255,0.70) !important;
 }
 
-/* -------------------------
-   Button glass
-   ------------------------- */
-body:has(form[action*="login"]) button,
-body:has(form[action*="login"]) button[type="submit"],
-body:has(form[action*="login"]) button[class*="bg"],
-body:has(form[action*="login"]) button[class*="primary"],
-body:has(form[action*="login"]) button[class*="blue"],
-body:has(form[action*="login"]) button[class*="indigo"] {
-  background: rgba(255, 255, 255, 0.18) !important;
-  backdrop-filter: blur(16px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+.glass-wrapper input:focus,
+.glass-wrapper textarea:focus,
+.glass-wrapper select:focus {
+  outline: none !important;
+  border-color: rgba(147, 197, 253, 0.85) !important;       /* soft blue */
+  box-shadow:
+    0 0 0 1px rgba(147, 197, 253, 0.75),
+    0 12px 30px rgba(0,0,0,0.40) !important;
+}
 
-  border: 1px solid rgba(255, 255, 255, 0.35) !important;
-  color: #fff !important;
+/* =========================
+   BUTTON – remove solid blue, make glass blue
+   ========================= */
+
+.glass-wrapper button,
+.glass-wrapper button[type="submit"] {
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.95), rgba(59, 130, 246, 0.98)) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+
+  border: 1px solid rgba(191, 219, 254, 0.95) !important;
+  color: #ffffff !important;
 
   border-radius: 14px !important;
-
   box-shadow:
-    0 12px 30px rgba(0,0,0,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.35) !important;
+    0 16px 36px rgba(15, 23, 42, 0.80),
+    inset 0 1px 0 rgba(255,255,255,0.45) !important;
+
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  text-transform: uppercase;
 
   transition: all 0.2s ease !important;
 }
 
-body:has(form[action*="login"]) button:hover {
-  background: rgba(255, 255, 255, 0.28) !important;
+.glass-wrapper button:hover,
+.glass-wrapper button[type="submit"]:hover {
   transform: translateY(-1px);
+  box-shadow:
+    0 20px 40px rgba(15, 23, 42, 0.90),
+    inset 0 1px 0 rgba(255,255,255,0.60) !important;
 }
 
-body:has(form[action*="login"]) button:active {
+.glass-wrapper button:active,
+.glass-wrapper button[type="submit"]:active {
   transform: translateY(0);
+  box-shadow:
+    0 10px 24px rgba(15, 23, 42, 0.80),
+    inset 0 1px 0 rgba(255,255,255,0.30) !important;
 }
 
-/* Labels/links */
-body:has(form[action*="login"]) label { color: rgba(255,255,255,0.90) !important; }
-body:has(form[action*="login"]) a { color: rgba(255,255,255,0.75) !important; }
-body:has(form[action*="login"]) a:hover { color: rgba(255,255,255,0.95) !important; }
+/* Labels & links on login */
+.glass-wrapper label {
+  color: rgba(255,255,255,0.88) !important;
+}
 
-/* Mobile */
+.glass-wrapper a {
+  color: rgba(209,213,219,0.90) !important;
+}
+
+.glass-wrapper a:hover {
+  color: rgba(255,255,255,0.98) !important;
+}
+
+/* Mobile tweaks */
 @media (max-width: 480px) {
-  :where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"], .shadow, [class*="shadow"]):has(form[action*="login"]) {
-    border-radius: 18px !important;
+  .glass-wrapper {
+    border-radius: 18px;
   }
-  :where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"], .shadow, [class*="shadow"]):has(form[action*="login"])::before,
-  :where(.bg-white, [class*="bg-white"], [class*="bg-gray"], [class*="dark:bg"], .shadow, [class*="shadow"]):has(form[action*="login"])::after {
-    border-radius: 18px !important;
+  .glass-wrapper::before,
+  .glass-wrapper::after {
+    border-radius: 18px;
   }
 }
 EOF
@@ -530,7 +552,7 @@ build_assets() {
 
   # Kill NODE_OPTIONS to avoid OpenSSL errors
   if [[ -n "${NODE_OPTIONS:-}" ]]; then
-    warn "NODE_OPTIONS is set to '$NODE_OPTIONS'. Unsetting to avoid OpenSSL OpenSSL_EVP errors."
+    warn "NODE_OPTIONS is set to '$NODE_OPTIONS'. Unsetting to avoid OpenSSL errors."
     unset NODE_OPTIONS
   fi
 
@@ -613,7 +635,7 @@ update_login_form_tsx
 # Inject wrapper changes + CSS/video
 inject_wrapper
 
-# Build JS/CSS assets so React + CSS changes actually load
+# Build frontend assets
 build_assets
 
 log "Setting permissions on assets..."
