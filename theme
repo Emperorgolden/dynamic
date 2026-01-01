@@ -34,6 +34,9 @@ WRAPPER="$PANEL_DIR/resources/views/templates/wrapper.blade.php"
 BACKUP="$WRAPPER.bak"
 MEDIA_DIR="$PANEL_DIR/public/assets/media"
 CSS_DIR="$PANEL_DIR/public/assets/css"
+LOGIN_FORM="$PANEL_DIR/resources/scripts/components/auth/LoginFormContainer.tsx"
+LOGIN_FORM_BACKUP="$LOGIN_FORM.bak"
+
 mkdir -p "$MEDIA_DIR" "$CSS_DIR"
 
 # Markers to keep edits safe + repeatable
@@ -82,12 +85,20 @@ if [[ "${option:-}" == "3" ]]; then
   if [[ -f "$BACKUP" ]]; then
     log "Restoring wrapper backup: $BACKUP"
     mv "$BACKUP" "$WRAPPER"
-    log "Backup restored."
+    log "Wrapper backup restored."
   else
-    warn "No backup file found. Removing injected blocks only..."
+    warn "No wrapper backup file found. Removing injected blocks only..."
     sed -i "/$HEAD_MARK_START/,/$HEAD_MARK_END/d" "$WRAPPER" || true
     sed -i "/$VIDEO_MARK_START/,/$VIDEO_MARK_END/d" "$WRAPPER" || true
     sed -i "/$FOOTER_MARK_START/,/$FOOTER_MARK_END/d" "$WRAPPER" || true
+  fi
+
+  if [[ -f "$LOGIN_FORM_BACKUP" ]]; then
+    log "Restoring LoginFormContainer.tsx backup: $LOGIN_FORM_BACKUP"
+    mv "$LOGIN_FORM_BACKUP" "$LOGIN_FORM"
+    log "LoginFormContainer.tsx restored."
+  else
+    warn "No LoginFormContainer.tsx backup found. Leaving current version in place."
   fi
 
   log "Removing custom assets..."
@@ -162,7 +173,7 @@ else
   saved_filename="custom_bg.$file_extension"
 fi
 
-# --- Generate CSS ---
+# --- Generate CSS for background ---
 log "Generating custom background CSS..."
 CSS_FILE="$CSS_DIR/custom-background.css"
 
@@ -188,7 +199,7 @@ body { background-color: #000 !important; }
 EOF
 fi
 
-# --- Liquid Glass Login CSS (UPDATED: inputs + button glass, kills blue + white) ---
+# --- Liquid Glass Login CSS (same as your current one) ---
 log "Writing Liquid Glass login CSS..."
 LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
@@ -265,7 +276,7 @@ body:has(form[action*="login"]) [class*="bg-white"] {
 }
 
 /* -------------------------
-   FINAL FIX: Inputs glass
+   Inputs glass
    ------------------------- */
 body:has(form[action*="login"]) input,
 body:has(form[action*="login"]) textarea,
@@ -289,8 +300,7 @@ body:has(form[action*="login"]) input::placeholder {
 }
 
 /* -------------------------
-   FINAL FIX: Button glass
-   - kills Tailwind bg-blue/bg-primary/bg-indigo classes
+   Button glass
    ------------------------- */
 body:has(form[action*="login"]) button,
 body:has(form[action*="login"]) button[type="submit"],
@@ -340,6 +350,126 @@ body:has(form[action*="login"]) a:hover { color: rgba(255,255,255,0.95) !importa
 }
 EOF
 
+# --- Function: update LoginFormContainer.tsx with your glass build ---
+update_login_form_tsx() {
+  log "Updating LoginFormContainer.tsx to glossy glass version..."
+
+  if [[ ! -f "$LOGIN_FORM" ]]; then
+    err "LoginFormContainer.tsx not found at $LOGIN_FORM"
+    return
+  fi
+
+  if [[ ! -f "$LOGIN_FORM_BACKUP" ]]; then
+    log "Creating backup of LoginFormContainer.tsx at $LOGIN_FORM_BACKUP"
+    cp "$LOGIN_FORM" "$LOGIN_FORM_BACKUP"
+  else
+    log "Backup of LoginFormContainer.tsx already exists, not overwriting."
+  fi
+
+  cat <<'EOF' > "$LOGIN_FORM"
+import React, { forwardRef } from 'react';
+import { Form } from 'formik';
+import styled from 'styled-components/macro';
+import { breakpoint } from '@/theme';
+import FlashMessageRender from '@/components/FlashMessageRender';
+import tw from 'twin.macro';
+
+type Props = React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>, HTMLFormElement> & {
+    title?: string;
+};
+
+const Container = styled.div`
+    ${breakpoint('sm')`
+        ${tw`w-4/5 mx-auto`}
+    `};
+
+    ${breakpoint('md')`
+        ${tw`p-10`}
+    `};
+
+    ${breakpoint('lg')`
+        ${tw`w-3/5`}
+    `};
+
+    ${breakpoint('xl')`
+        ${tw`w-full`}
+        max-width: 700px;
+    `};
+`;
+
+export default forwardRef<HTMLFormElement, Props>(({ title, ...props }, ref) => (
+    <Container>
+        {title && (
+            <h2 css={tw`text-3xl text-center text-neutral-100 font-medium py-4`}>
+                {title}
+            </h2>
+        )}
+
+        <FlashMessageRender css={tw`mb-2 px-1`} />
+
+        <Form {...props} ref={ref}>
+            <div
+                css={tw`
+                    md:flex w-full
+                    p-6 md:pl-0 mx-1
+                    rounded-2xl
+                    bg-white/10
+                    backdrop-blur-lg
+                    border border-white/30
+                    shadow-2xl
+                    relative overflow-hidden
+                `}
+                className="glass-wrapper"
+            >
+                {/* Shine Layer */}
+                <div
+                    css={tw`absolute inset-0 pointer-events-none rounded-2xl`}
+                    style={{
+                        background: `
+                            radial-gradient(120% 70% at 20% 0%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 35%, rgba(255,255,255,0.00) 65%),
+                            linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 45%, rgba(0,0,0,0.10) 100%)`,
+                    }}
+                />
+                {/* Noise Texture Layer */}
+                <div
+                    css={tw`absolute inset-0 pointer-events-none rounded-2xl opacity-10 mix-blend-overlay`}
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E")`,
+                    }}
+                />
+
+                <div css={tw`flex-none select-none mb-6 md:mb-0 self-center z-10`}>
+                    <img
+                        src={'/assets/svgs/pterodactyl.svg'}
+                        css={tw`block w-48 md:w-64 mx-auto`}
+                    />
+                </div>
+
+                <div css={tw`flex-1 z-10`}>
+                    {props.children}
+                </div>
+            </div>
+        </Form>
+
+        <p css={tw`text-center text-neutral-500 text-xs mt-4`}>
+            &copy; 2025 - {new Date().getFullYear()}&nbsp;
+            <a
+                rel={'noopener nofollow noreferrer'}
+                href={'https://pterodactyl.io'}
+                target={'_blank'}
+                css={tw`no-underline text-neutral-500 hover:text-neutral-300`}
+            >
+                Pterodactyl Software
+            </a>
+            &nbsp;•&nbsp;All rights reserved by Golden Hosting Enterprise
+        </p>
+    </Container>
+));
+EOF
+
+  log "LoginFormContainer.tsx updated."
+}
+
 inject_wrapper() {
   log "Injecting code into wrapper (safe mode)..."
 
@@ -382,7 +512,7 @@ inject_wrapper() {
     ' "$WRAPPER" > "$WRAPPER.tmp" && mv "$WRAPPER.tmp" "$WRAPPER"
   fi
 
-  # Footer (KEEP THIS - you asked not to remove it)
+  # Footer (KEEP THIS)
   FOOTER_HTML="All rights reserved by Golden Hosting Enterprise © 2025 -2026"
   if grep -q "@yield('below-container')" "$WRAPPER"; then
     sed -i "/@yield('below-container')/a $FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" "$WRAPPER"
@@ -408,7 +538,6 @@ if [[ "${option:-}" == "2" ]]; then
 
   # Avoid interactive composer prompt
   export COMPOSER_ALLOW_SUPERUSER=1
-  export COMPOSER_ALLOW_SUPERUSER=1
 
   log "Running composer install..."
   composer install --no-dev --optimize-autoloader --no-interaction
@@ -427,7 +556,10 @@ if [[ "${option:-}" == "2" ]]; then
   log "NookTheme installation completed."
 fi
 
-# Inject for option 1 or 2
+# Apply your React glass container (for both option 1 and 2)
+update_login_form_tsx
+
+# Inject wrapper changes + CSS/video
 inject_wrapper
 
 log "Setting permissions on assets..."
