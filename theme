@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,11 +13,12 @@ echo -e " Golden Hosting Enterprise - Theme Deployer v2"
 echo -e "==============================================${NC}"
 echo
 
+# --- Dependencies ---
 if ! command -v ffmpeg &> /dev/null; then
     echo -e "${YELLOW}ffmpeg is not installed.${NC}"
     read -p "Do you want to install it now? (y/N): " install_ffmpeg
-    if [[ "$install_ffmpeg" =~ ^[Yy]$ ]]; then
-        [[ $EUID -ne 0 ]] && SUDO_CMD="sudo" || SUDO_CMD=""
+    if [[ "${install_ffmpeg:-}" =~ ^[Yy]$ ]]; then
+        [[ ${EUID:-1000} -ne 0 ]] && SUDO_CMD="sudo" || SUDO_CMD=""
         $SUDO_CMD apt-get update -y
         $SUDO_CMD apt-get install -y ffmpeg wget curl tar composer
         echo -e "${GREEN}ffmpeg has been installed successfully.${NC}"
@@ -35,6 +36,14 @@ MEDIA_DIR="/var/www/pterodactyl/public/assets/media"
 CSS_DIR="/var/www/pterodactyl/public/assets/css"
 mkdir -p "$MEDIA_DIR" "$CSS_DIR"
 
+# Markers to keep edits safe + repeatable
+HEAD_MARK_START="<!-- GHE_THEME_HEAD_START -->"
+HEAD_MARK_END="<!-- GHE_THEME_HEAD_END -->"
+VIDEO_MARK_START="<!-- GHE_THEME_VIDEO_START -->"
+VIDEO_MARK_END="<!-- GHE_THEME_VIDEO_END -->"
+FOOTER_MARK_START="<!-- GHE_THEME_FOOTER_START -->"
+FOOTER_MARK_END="<!-- GHE_THEME_FOOTER_END -->"
+
 echo
 echo -e "${YELLOW}[1]${NC} Add custom background to the default theme"
 echo -e "${YELLOW}[2]${NC} Install NookTheme and add custom background"
@@ -42,44 +51,69 @@ echo -e "${YELLOW}[3]${NC} Uninstall Theme and Restore Backup"
 echo
 read -p "Please choose an option [1-3]: " option
 
-if [[ "$option" == "3" ]]; then
+# --- Uninstall ---
+if [[ "${option:-}" == "3" ]]; then
     if [[ -f "$BACKUP" ]]; then
         mv "$BACKUP" "$WRAPPER"
         echo -e "${GREEN}Backup of wrapper.blade.php restored.${NC}"
     else
-        echo -e "${YELLOW}No backup file found to restore.${NC}"
+        echo -e "${YELLOW}No backup file found to restore. Removing injected blocks only...${NC}"
+        # Remove injected blocks if backup missing
+        sed -i "/$HEAD_MARK_START/,/$HEAD_MARK_END/d" "$WRAPPER" || true
+        sed -i "/$VIDEO_MARK_START/,/$VIDEO_MARK_END/d" "$WRAPPER" || true
+        sed -i "/$FOOTER_MARK_START/,/$FOOTER_MARK_END/d" "$WRAPPER" || true
     fi
-    rm -f "$MEDIA_DIR/custom_bg."*
-    rm -f "$CSS_DIR/custom-background.css" "$CSS_DIR/login-theme.css"
+
+    rm -f "$MEDIA_DIR/custom_bg."* || true
+    rm -f "$CSS_DIR/custom-background.css" "$CSS_DIR/login-theme.css" || true
+
     cd /var/www/pterodactyl
-    php artisan view:clear
+    php artisan view:clear || true
+    php artisan config:clear || true
+    php artisan cache:clear || true
+    php artisan queue:restart || true
+
     echo -e "${GREEN}Theme uninstalled and cache cleared successfully.${NC}"
     exit 0
 fi
 
+# --- Get media URL ---
 read -p "Enter the direct URL for the background media (image/video): " media_url
-if [[ -z "$media_url" ]]; then
+if [[ -z "${media_url:-}" ]]; then
     echo -e "${RED}[ERROR] No URL was provided. Exiting.${NC}"
     exit 1
 fi
 
-file_extension="${media_url##*.}"
+# Strip querystring/fragments so extension parsing works:
+# e.g. bg.mp4?token=abc -> bg.mp4
+clean_url="${media_url%%\#*}"
+clean_url="${clean_url%%\?*}"
+
+file_extension="${clean_url##*.}"
+file_extension="$(echo "$file_extension" | tr '[:upper:]' '[:lower:]')"
+
 media_type="unknown"
 case "$file_extension" in
     jpg|jpeg|png|gif) media_type="image" ;;
     mp4|webm|mov) media_type="video" ;;
-    *) echo -e "${RED}[ERROR] Unsupported file type '$file_extension'. Only images (jpg, png, gif) and videos (mp4, webm, mov) are supported.${NC}"; exit 1 ;;
+    *)
+        echo -e "${RED}[ERROR] Unsupported file type '$file_extension'. Only images (jpg, png, gif) and videos (mp4, webm, mov) are supported.${NC}"
+        exit 1
+        ;;
 esac
 
 ORIGINAL_FILE="$MEDIA_DIR/original.$file_extension"
 echo -e "${CYAN}Downloading media from URL...${NC}"
 wget -q --show-progress "$media_url" -O "$ORIGINAL_FILE"
 
+# --- Convert / save media ---
 if [[ "$media_type" == "video" ]]; then
     FINAL_FILE="$MEDIA_DIR/custom_bg.webm"
-    echo -e "${CYAN}Converting video to 1080p WebM format. This may take a moment...${NC}"
-    ffmpeg -loglevel error -y -i "$ORIGINAL_FILE" -vf "scale=-1:1080" -c:v libvpx-vp9 -crf 30 -b:v 0 -an "$FINAL_FILE"
-    
+    echo -e "${CYAN}Converting video to 1080p WebM format...${NC}"
+    ffmpeg -loglevel error -y -i "$ORIGINAL_FILE" \
+        -vf "scale=-2:1080" -c:v libvpx-vp9 -crf 30 -b:v 0 -an \
+        "$FINAL_FILE"
+
     if [[ -f "$FINAL_FILE" ]]; then
         echo -e "${GREEN}Video conversion successful.${NC}"
     else
@@ -87,7 +121,7 @@ if [[ "$media_type" == "video" ]]; then
         rm -f "$ORIGINAL_FILE"
         exit 1
     fi
-    
+
     rm -f "$ORIGINAL_FILE"
     saved_filename="custom_bg.webm"
 else
@@ -96,6 +130,7 @@ else
     saved_filename="custom_bg.$file_extension"
 fi
 
+# --- Generate CSS ---
 echo -e "${CYAN}Generating custom CSS...${NC}"
 CSS_FILE="$CSS_DIR/custom-background.css"
 if [[ "$media_type" == "image" ]]; then
@@ -109,12 +144,12 @@ else
 cat <<EOF > "$CSS_FILE"
 #dynamic-background-video {
     position: fixed;
-    right: 0;
-    bottom: 0;
-    min-width: 100%;
-    min-height: 100%;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     z-index: -10;
     object-fit: cover;
+    pointer-events: none;
 }
 body { background-color: #000 !important; }
 EOF
@@ -135,32 +170,66 @@ form[action$="/login"] a:hover { color: #FFFFFF !important; }
 EOF
 
 inject_wrapper() {
-    echo -e "${CYAN}Injecting code into the layout file...${NC}"
+    echo -e "${CYAN}Injecting code into the layout file (safe mode)...${NC}"
+
+    [[ ! -f "$WRAPPER" ]] && { echo -e "${RED}[ERROR] wrapper.blade.php not found at $WRAPPER${NC}"; exit 1; }
     [[ ! -f "$BACKUP" ]] && cp "$WRAPPER" "$BACKUP"
 
-    sed -i "/custom-background.css/d" "$WRAPPER"
-    sed -i "/login-theme.css/d" "$WRAPPER"
-    sed -i "s#</head>#    <link rel='stylesheet' href='/assets/css/custom-background.css'>\n    <link rel='stylesheet' href='/assets/css/login-theme.css'>\n</head>#" "$WRAPPER"
+    # Remove previously injected blocks (safe + idempotent)
+    sed -i "/$HEAD_MARK_START/,/$HEAD_MARK_END/d" "$WRAPPER" || true
+    sed -i "/$VIDEO_MARK_START/,/$VIDEO_MARK_END/d" "$WRAPPER" || true
+    sed -i "/$FOOTER_MARK_START/,/$FOOTER_MARK_END/d" "$WRAPPER" || true
 
-    if [[ "$media_type" == "video" ]]; then
-        VIDEO_TAG="<video autoplay muted loop playsinline id='dynamic-background-video'><source src='/assets/media/$saved_filename' type='video/webm'></video>"
-        sed -i "/id='dynamic-background-video'/d" "$WRAPPER"
-        sed -i "s#<body#&\\n    ${VIDEO_TAG}#" "$WRAPPER"
+    # Ensure </head> exists before trying to inject
+    if ! grep -q "</head>" "$WRAPPER"; then
+        echo -e "${RED}[ERROR] Could not find </head> in wrapper.blade.php. Aborting to prevent corruption.${NC}"
+        exit 1
     fi
 
+    # Inject CSS links right before </head>
+    sed -i "s#</head>#$HEAD_MARK_START\n<link rel='stylesheet' href='/assets/css/custom-background.css'>\n<link rel='stylesheet' href='/assets/css/login-theme.css'>\n$HEAD_MARK_END\n</head>#i" "$WRAPPER"
+
+    # Video injection: insert AFTER the <body ...> tag line (never inside it)
+    if [[ "$media_type" == "video" ]]; then
+        VIDEO_TAG="<video autoplay muted loop playsinline id=\"dynamic-background-video\"><source src=\"/assets/media/$saved_filename\" type=\"video/webm\"></video>"
+
+        if ! grep -Eq "<body[^>]*>" "$WRAPPER"; then
+            echo -e "${RED}[ERROR] Could not find a <body ...> tag in wrapper.blade.php. Aborting to prevent corruption.${NC}"
+            exit 1
+        fi
+
+        # Insert after first line containing <body ...>
+        awk -v vstart="$VIDEO_MARK_START" -v vend="$VIDEO_MARK_END" -v vtag="$VIDEO_TAG" '
+            BEGIN{done=0}
+            {
+              print
+              if (!done && $0 ~ /<body[^>]*>/) {
+                print vstart
+                print vtag
+                print vend
+                done=1
+              }
+            }
+        ' "$WRAPPER" > "$WRAPPER.tmp" && mv "$WRAPPER.tmp" "$WRAPPER"
+    fi
+
+    # Footer (use markers so it won't duplicate or break templates)
     FOOTER_HTML="All rights reserved by Golden Hosting Enterprise © 2025"
-    if ! grep -q "Golden Hosting Enterprise" "$WRAPPER"; then
-        sed -i "/@yield('below-container')/a <div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>" "$WRAPPER"
+    if grep -q "@yield('below-container')" "$WRAPPER"; then
+        # insert after yield line
+        sed -i "/@yield('below-container')/a $FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" "$WRAPPER"
+    else
+        # fallback: append at end of file
+        echo -e "\n$FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" >> "$WRAPPER"
     fi
 }
 
-if [[ "$option" == "1" ]]; then
-    inject_wrapper
-elif [[ "$option" == "2" ]]; then
+# --- Option 2: Install NookTheme ---
+if [[ "${option:-}" == "2" ]]; then
     echo -e "${CYAN}Installing NookTheme...${NC}"
     cd /var/www/pterodactyl
     php artisan down
-    curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
+    curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xz
     chmod -R 755 storage/* bootstrap/cache
     composer install --no-dev --optimize-autoloader
     php artisan migrate --seed --force
@@ -169,8 +238,10 @@ elif [[ "$option" == "2" ]]; then
     php artisan queue:restart
     php artisan up
     chown -R www-data:www-data .
-    inject_wrapper
 fi
+
+# Inject for option 1 or 2
+inject_wrapper
 
 echo -e "${CYAN}Setting correct permissions for assets...${NC}"
 chown -R www-data:www-data /var/www/pterodactyl/public/assets
