@@ -7,8 +7,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Safer log location (works even when not root)
-LOG_FILE="/var/www/pterodactyl/storage/logs/ghe-theme-deployer.log"
+LOG_FILE="/var/log/ghe-theme-deployer.log"
 
 # --- Logging helpers ---
 log()  { echo -e "${CYAN}[INFO]${NC}  $*"; }
@@ -19,7 +18,7 @@ err()  { echo -e "${RED}[ERROR]${NC} $*"; }
 mkdir -p "$(dirname "$LOG_FILE")" || true
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# Show a helpful error if anything fails
+# Helpful error if anything fails
 trap 'err "Script failed at line $LINENO. Check log: $LOG_FILE"' ERR
 
 clear
@@ -29,8 +28,24 @@ echo -e "==============================================${NC}"
 echo
 log "Logging to: $LOG_FILE"
 
+# --- Paths ---
+PANEL_DIR="/var/www/pterodactyl"
+WRAPPER="$PANEL_DIR/resources/views/templates/wrapper.blade.php"
+BACKUP="$WRAPPER.bak"
+MEDIA_DIR="$PANEL_DIR/public/assets/media"
+CSS_DIR="$PANEL_DIR/public/assets/css"
+mkdir -p "$MEDIA_DIR" "$CSS_DIR"
+
+# Markers to keep edits safe + repeatable
+HEAD_MARK_START="<!-- GHE_THEME_HEAD_START -->"
+HEAD_MARK_END="<!-- GHE_THEME_HEAD_END -->"
+VIDEO_MARK_START="<!-- GHE_THEME_VIDEO_START -->"
+VIDEO_MARK_END="<!-- GHE_THEME_VIDEO_END -->"
+FOOTER_MARK_START="<!-- GHE_THEME_FOOTER_START -->"
+FOOTER_MARK_END="<!-- GHE_THEME_FOOTER_END -->"
+
 # --- Dependencies ---
-if ! command -v ffmpeg &> /dev/null; then
+if ! command -v ffmpeg &>/dev/null; then
   warn "ffmpeg is not installed."
   read -p "Do you want to install it now? (y/N): " install_ffmpeg
   if [[ "${install_ffmpeg:-}" =~ ^[Yy]$ ]]; then
@@ -48,19 +63,10 @@ else
   log "ffmpeg is already installed."
 fi
 
-WRAPPER="/var/www/pterodactyl/resources/views/templates/wrapper.blade.php"
-BACKUP="$WRAPPER.bak"
-MEDIA_DIR="/var/www/pterodactyl/public/assets/media"
-CSS_DIR="/var/www/pterodactyl/public/assets/css"
-mkdir -p "$MEDIA_DIR" "$CSS_DIR"
-
-# Markers to keep edits safe + repeatable
-HEAD_MARK_START="<!-- GHE_THEME_HEAD_START -->"
-HEAD_MARK_END="<!-- GHE_THEME_HEAD_END -->"
-VIDEO_MARK_START="<!-- GHE_THEME_VIDEO_START -->"
-VIDEO_MARK_END="<!-- GHE_THEME_VIDEO_END -->"
-FOOTER_MARK_START="<!-- GHE_THEME_FOOTER_START -->"
-FOOTER_MARK_END="<!-- GHE_THEME_FOOTER_END -->"
+if ! command -v wget &>/dev/null; then
+  err "wget not found. Install it: apt-get install -y wget"
+  exit 1
+fi
 
 echo
 echo -e "${YELLOW}[1]${NC} Add custom background to the default theme"
@@ -76,7 +82,7 @@ if [[ "${option:-}" == "3" ]]; then
   if [[ -f "$BACKUP" ]]; then
     log "Restoring wrapper backup: $BACKUP"
     mv "$BACKUP" "$WRAPPER"
-    log "Backup of wrapper.blade.php restored."
+    log "Backup restored."
   else
     warn "No backup file found. Removing injected blocks only..."
     sed -i "/$HEAD_MARK_START/,/$HEAD_MARK_END/d" "$WRAPPER" || true
@@ -89,7 +95,7 @@ if [[ "${option:-}" == "3" ]]; then
   rm -f "$CSS_DIR/custom-background.css" "$CSS_DIR/login-theme.css" || true
 
   log "Clearing Pterodactyl caches..."
-  cd /var/www/pterodactyl
+  cd "$PANEL_DIR"
   php artisan view:clear || true
   php artisan config:clear || true
   php artisan cache:clear || true
@@ -135,7 +141,6 @@ if [[ "$media_type" == "video" ]]; then
   log "Converting video to 1080p WebM (this can take time)..."
   log "FFmpeg progress will show below:"
 
-  # NOTE: no trailing "\" with spaces — keep this clean
   ffmpeg -hide_banner -y -stats -loglevel warning -i "$ORIGINAL_FILE" \
     -vf "scale=-2:1080" -c:v libvpx-vp9 -crf 30 -b:v 0 -an \
     "$FINAL_FILE"
@@ -144,11 +149,11 @@ if [[ "$media_type" == "video" ]]; then
     log "Video conversion successful: $FINAL_FILE"
   else
     err "Video conversion failed. Please check the source file."
-    rm -f "$ORIGINAL_FILE"
+    rm -f "$ORIGINAL_FILE" || true
     exit 1
   fi
 
-  rm -f "$ORIGINAL_FILE"
+  rm -f "$ORIGINAL_FILE" || true
   saved_filename="custom_bg.webm"
 else
   FINAL_FILE="$MEDIA_DIR/custom_bg.$file_extension"
@@ -158,7 +163,7 @@ else
 fi
 
 # --- Generate CSS ---
-log "Generating custom CSS..."
+log "Generating custom background CSS..."
 CSS_FILE="$CSS_DIR/custom-background.css"
 
 if [[ "$media_type" == "image" ]]; then
@@ -183,43 +188,44 @@ body { background-color: #000 !important; }
 EOF
 fi
 
-# --- Liquid Glass Login CSS (UPDATED: catches white card wrappers too) ---
-log "Writing Liquid Glass login CSS (updated selectors)..."
+# --- Liquid Glass Login CSS (strong selectors so it actually hits the white card) ---
+log "Writing Liquid Glass login CSS..."
 LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
 /* =========================
-   GHE Liquid Glass Login (Stronger selectors)
+   GHE Liquid Glass Login
    ========================= */
 
-/* Kill common solid backgrounds on login page wrappers */
+/* Scope to login-ish pages/containers across Pterodactyl + NookTheme variants */
+body[class*="LoginPageContainer"],
+body:has(form[action*="login"]),
+body:has(form[action$="/auth/login"]),
+body:has(form[action$="/login"]) {}
+
+/* Remove default white blocks */
 .login-panel,
+.LoginFormContainer,
+.LoginPageContainer,
 body[class*="LoginPageContainer"] .pt-8 > .w-full,
-body[class*="LoginPageContainer"] .LoginPageContainer,
-body[class*="LoginPageContainer"] .LoginFormContainer,
-body[class*="LoginPageContainer"] .LoginFormContainer > div,
-body[class*="LoginPageContainer"] .LoginFormContainer > div > div {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* Common Tailwind "white card" classes used by themes */
-body[class*="LoginPageContainer"] .bg-white,
-body[class*="LoginPageContainer"] .bg-gray-50,
-body[class*="LoginPageContainer"] .bg-neutral-50,
+body[class*="LoginPageContainer"] .w-full,
+body[class*="LoginPageContainer"] .mx-auto,
 body[class*="LoginPageContainer"] .shadow,
-body[class*="LoginPageContainer"] .shadow-sm,
-body[class*="LoginPageContainer"] .shadow-md,
-body[class*="LoginPageContainer"] .shadow-lg {
+body[class*="LoginPageContainer"] .bg-white,
+body[class*="LoginPageContainer"] [class*="bg-white"],
+body[class*="LoginPageContainer"] [class*="shadow"] {
   background: transparent !important;
   box-shadow: none !important;
+  border: none !important;
 }
 
-/* Apply glass to the form AND the typical wrapper div */
-body[class*="LoginPageContainer"] form[action$="/login"],
-body[class*="LoginPageContainer"] form[action$="/auth/login"],
-body[class*="LoginPageContainer"] form[action*="login"],
-body[class*="LoginPageContainer"] .LoginFormContainer > div {
+/* The “card” (apply to form AND common wrappers) */
+:where(
+  form[action$="/login"],
+  form[action$="/auth/login"],
+  form[action*="login"],
+  .login-panel,
+  .LoginFormContainer
+) {
   position: relative !important;
   overflow: hidden !important;
   border-radius: 22px !important;
@@ -238,10 +244,14 @@ body[class*="LoginPageContainer"] .LoginFormContainer > div {
   padding: 2.25rem !important;
 }
 
-/* Gloss highlight */
-body[class*="LoginPageContainer"] form[action$="/login"]::before,
-body[class*="LoginPageContainer"] form[action*="login"]::before,
-body[class*="LoginPageContainer"] .LoginFormContainer > div::before {
+/* Glossy highlight */
+:where(
+  form[action$="/login"],
+  form[action$="/auth/login"],
+  form[action*="login"],
+  .login-panel,
+  .LoginFormContainer
+)::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -252,10 +262,14 @@ body[class*="LoginPageContainer"] .LoginFormContainer > div::before {
     linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 45%, rgba(0,0,0,0.10) 100%);
 }
 
-/* Subtle noise texture */
-body[class*="LoginPageContainer"] form[action$="/login"]::after,
-body[class*="LoginPageContainer"] form[action*="login"]::after,
-body[class*="LoginPageContainer"] .LoginFormContainer > div::after {
+/* Subtle noise */
+:where(
+  form[action$="/login"],
+  form[action$="/auth/login"],
+  form[action*="login"],
+  .login-panel,
+  .LoginFormContainer
+)::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -267,72 +281,75 @@ body[class*="LoginPageContainer"] .LoginFormContainer > div::after {
 }
 
 /* Logo */
-body[class*="LoginPageContainer"] form img {
+:where(form[action*="login"]) img {
   display: block;
-  margin-left: auto;
-  margin-right: auto;
+  margin-inline: auto;
   margin-bottom: 1.25rem;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,0.25));
 }
 
-/* Labels */
-body[class*="LoginPageContainer"] label {
+/* Text */
+:where(form[action*="login"], .login-panel, .LoginFormContainer) label {
   color: rgba(255,255,255,0.90) !important;
   text-shadow: 0 1px 1px rgba(0,0,0,0.25);
 }
 
 /* Inputs */
-body[class*="LoginPageContainer"] input[type=email],
-body[class*="LoginPageContainer"] input[type=text],
-body[class*="LoginPageContainer"] input[type=password] {
+:where(form[action*="login"], .login-panel, .LoginFormContainer)
+input[type=email],
+:where(form[action*="login"], .login-panel, .LoginFormContainer)
+input[type=text],
+:where(form[action*="login"], .login-panel, .LoginFormContainer)
+input[type=password] {
   background: rgba(0, 0, 0, 0.18) !important;
   border: 1px solid rgba(255, 255, 255, 0.22) !important;
   color: rgba(255,255,255,0.92) !important;
   border-radius: 14px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 10px 24px rgba(0,0,0,0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 10px 24px rgba(0,0,0,0.18);
 }
-body[class*="LoginPageContainer"] input::placeholder {
+:where(form[action*="login"], .login-panel, .LoginFormContainer) input::placeholder {
   color: rgba(255,255,255,0.55) !important;
 }
 
 /* Button */
-body[class*="LoginPageContainer"] button[type=submit] {
+:where(form[action*="login"], .login-panel, .LoginFormContainer) button[type=submit] {
   border-radius: 14px !important;
   background: rgba(13, 110, 253, 0.75) !important;
   border: 1px solid rgba(255,255,255,0.22) !important;
   color: white !important;
-  box-shadow: 0 14px 30px rgba(13, 110, 253, 0.20), inset 0 1px 0 rgba(255,255,255,0.22);
+  box-shadow:
+    0 14px 30px rgba(13, 110, 253, 0.20),
+    inset 0 1px 0 rgba(255,255,255,0.22);
   transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease !important;
 }
-body[class*="LoginPageContainer"] button[type=submit]:hover {
+:where(form[action*="login"], .login-panel, .LoginFormContainer) button[type=submit]:hover {
   background: rgba(13, 110, 253, 0.85) !important;
 }
-body[class*="LoginPageContainer"] button[type=submit]:active {
+:where(form[action*="login"], .login-panel, .LoginFormContainer) button[type=submit]:active {
   transform: translateY(1px);
 }
 
 /* Links */
-body[class*="LoginPageContainer"] a {
+:where(form[action*="login"], .login-panel, .LoginFormContainer) a {
   color: rgba(255,255,255,0.70) !important;
   text-align: center;
   display: block;
   margin-top: 1rem;
 }
-body[class*="LoginPageContainer"] a:hover {
+:where(form[action*="login"], .login-panel, .LoginFormContainer) a:hover {
   color: rgba(255,255,255,0.95) !important;
 }
 
-/* Mobile */
+/* Mobile tweaks */
 @media (max-width: 480px) {
-  body[class*="LoginPageContainer"] .LoginFormContainer > div,
-  body[class*="LoginPageContainer"] form[action*="login"] {
+  :where(form[action*="login"], .login-panel, .LoginFormContainer) {
     padding: 1.5rem !important;
     border-radius: 18px !important;
   }
-  body[class*="LoginPageContainer"] form[action*="login"]::before,
-  body[class*="LoginPageContainer"] form[action*="login"]::after,
-  body[class*="LoginPageContainer"] .LoginFormContainer > div::before,
-  body[class*="LoginPageContainer"] .LoginFormContainer > div::after {
+  :where(form[action*="login"], .login-panel, .LoginFormContainer)::before,
+  :where(form[action*="login"], .login-panel, .LoginFormContainer)::after {
     border-radius: 18px;
   }
 }
@@ -344,6 +361,7 @@ inject_wrapper() {
   [[ ! -f "$WRAPPER" ]] && { err "wrapper.blade.php not found at $WRAPPER"; exit 1; }
   [[ ! -f "$BACKUP" ]] && { log "Creating backup: $BACKUP"; cp "$WRAPPER" "$BACKUP"; }
 
+  # Remove old injected blocks (idempotent)
   sed -i "/$HEAD_MARK_START/,/$HEAD_MARK_END/d" "$WRAPPER" || true
   sed -i "/$VIDEO_MARK_START/,/$VIDEO_MARK_END/d" "$WRAPPER" || true
   sed -i "/$FOOTER_MARK_START/,/$FOOTER_MARK_END/d" "$WRAPPER" || true
@@ -353,8 +371,10 @@ inject_wrapper() {
     exit 1
   fi
 
+  # Inject CSS links right before </head>
   sed -i "s#</head>#$HEAD_MARK_START\n<link rel='stylesheet' href='/assets/css/custom-background.css'>\n<link rel='stylesheet' href='/assets/css/login-theme.css'>\n$HEAD_MARK_END\n</head>#i" "$WRAPPER"
 
+  # Inject video right after <body ...>
   if [[ "$media_type" == "video" ]]; then
     VIDEO_TAG="<video autoplay muted loop playsinline id=\"dynamic-background-video\"><source src=\"/assets/media/$saved_filename\" type=\"video/webm\"></video>"
 
@@ -377,6 +397,7 @@ inject_wrapper() {
     ' "$WRAPPER" > "$WRAPPER.tmp" && mv "$WRAPPER.tmp" "$WRAPPER"
   fi
 
+  # Footer
   FOOTER_HTML="All rights reserved by Golden Hosting Enterprise © 2025 -2026"
   if grep -q "@yield('below-container')" "$WRAPPER"; then
     sed -i "/@yield('below-container')/a $FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" "$WRAPPER"
@@ -390,27 +411,44 @@ inject_wrapper() {
 # --- Option 2: Install NookTheme ---
 if [[ "${option:-}" == "2" ]]; then
   log "Installing NookTheme..."
-  cd /var/www/pterodactyl
+  cd "$PANEL_DIR"
+
   php artisan down
+
+  log "Downloading + extracting NookTheme..."
   curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xz
+
+  log "Fixing permissions..."
   chmod -R 755 storage/* bootstrap/cache
-  composer install --no-dev --optimize-autoloader
+
+  # Avoid interactive composer prompt
+  export COMPOSER_ALLOW_SUPERUSER=1
+
+  log "Running composer install..."
+  composer install --no-dev --optimize-autoloader --no-interaction
+
+  log "Running migrations + seed..."
   php artisan migrate --seed --force
+
+  log "Clearing config/view cache + restarting queue..."
   php artisan view:clear
   php artisan config:clear
   php artisan queue:restart
+
   php artisan up
   chown -R www-data:www-data .
+
   log "NookTheme installation completed."
 fi
 
+# Inject for option 1 or 2
 inject_wrapper
 
 log "Setting permissions on assets..."
-chown -R www-data:www-data /var/www/pterodactyl/public/assets
+chown -R www-data:www-data "$PANEL_DIR/public/assets"
 
 log "Clearing caches and restarting queue..."
-cd /var/www/pterodactyl
+cd "$PANEL_DIR"
 php artisan view:clear
 php artisan config:clear
 php artisan cache:clear
