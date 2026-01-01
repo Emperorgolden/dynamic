@@ -199,7 +199,7 @@ body { background-color: #000 !important; }
 EOF
 fi
 
-# --- Liquid Glass Login CSS (same as your current one) ---
+# --- Liquid Glass Login CSS ---
 log "Writing Liquid Glass login CSS..."
 LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
@@ -350,7 +350,7 @@ body:has(form[action*="login"]) a:hover { color: rgba(255,255,255,0.95) !importa
 }
 EOF
 
-# --- Function: update LoginFormContainer.tsx with your glass build ---
+# --- Function: update LoginFormContainer.tsx with glass build ---
 update_login_form_tsx() {
   log "Updating LoginFormContainer.tsx to glossy glass version..."
 
@@ -523,6 +523,57 @@ inject_wrapper() {
   log "Wrapper injection done."
 }
 
+# --- Function: build panel assets with Node 16 + Yarn ---
+build_assets() {
+  log "Building panel frontend assets with Node + Yarn..."
+  cd "$PANEL_DIR"
+
+  # Kill NODE_OPTIONS to avoid OpenSSL errors
+  if [[ -n "${NODE_OPTIONS:-}" ]]; then
+    warn "NODE_OPTIONS is set to '$NODE_OPTIONS'. Unsetting to avoid OpenSSL OpenSSL_EVP errors."
+    unset NODE_OPTIONS
+  fi
+
+  # Try to load nvm if not already available
+  if ! command -v nvm &>/dev/null; then
+    if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
+      log "Loading nvm from $HOME/.nvm/nvm.sh"
+      # shellcheck source=/dev/null
+      . "$HOME/.nvm/nvm.sh"
+    fi
+  fi
+
+  if command -v nvm &>/dev/null; then
+    log "Using nvm to ensure Node 16 LTS..."
+    nvm install 16 --lts
+    nvm use 16
+  else
+    warn "nvm not found; using system Node."
+  fi
+
+  local node_ver
+  node_ver="$(node -v 2>/dev/null || echo "none")"
+  if [[ "$node_ver" == "none" ]]; then
+    err "Node.js is not available; cannot build assets."
+    return 1
+  else
+    log "Node.js version for build: $node_ver"
+  fi
+
+  if ! command -v yarn &>/dev/null; then
+    err "yarn is not installed. Install it with 'npm install -g yarn' and re-run this script."
+    return 1
+  fi
+
+  log "Running yarn install..."
+  yarn install
+
+  log "Running yarn build:production (this can take a while)..."
+  yarn build:production
+
+  log "Frontend assets built successfully."
+}
+
 # --- Option 2: Install NookTheme ---
 if [[ "${option:-}" == "2" ]]; then
   log "Installing NookTheme..."
@@ -556,11 +607,14 @@ if [[ "${option:-}" == "2" ]]; then
   log "NookTheme installation completed."
 fi
 
-# Apply your React glass container (for both option 1 and 2)
+# Apply React glass container (for both option 1 and 2)
 update_login_form_tsx
 
 # Inject wrapper changes + CSS/video
 inject_wrapper
+
+# Build JS/CSS assets so React + CSS changes actually load
+build_assets
 
 log "Setting permissions on assets..."
 chown -R www-data:www-data "$PANEL_DIR/public/assets"
