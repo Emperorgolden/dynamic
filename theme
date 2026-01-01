@@ -549,7 +549,7 @@ inject_wrapper() {
   log "Wrapper injection done."
 }
 
-# --- Function: build panel assets with Node 16 + Yarn ---
+# --- Function: build panel assets with Node 16 + Yarn (auto install/downgrade) ---
 build_assets() {
   log "Building panel frontend assets with Node + Yarn..."
   cd "$PANEL_DIR"
@@ -560,36 +560,63 @@ build_assets() {
     unset NODE_OPTIONS
   fi
 
-  # Try to load nvm if not already available
-  if ! command -v nvm &>/dev/null; then
-    if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
-      log "Loading nvm from $HOME/.nvm/nvm.sh"
-      # shellcheck source=/dev/null
-      . "$HOME/.nvm/nvm.sh"
+  [[ ${EUID:-1000} -ne 0 ]] && SUDO_CMD="sudo" || SUDO_CMD=""
+
+  local node_ver major
+
+  if command -v node &>/dev/null; then
+    node_ver="$(node -v 2>/dev/null || echo "")"
+    major="${node_ver#v}"
+    major="${major%%.*}"
+
+    if [[ -z "$major" || "$major" != "16" ]]; then
+      warn "Detected Node.js $node_ver; Pterodactyl frontend prefers Node 16.x."
+      read -p "Install/switch to Node 16.x via NodeSource now? (y/N): " install_node
+      if [[ "${install_node:-}" =~ ^[Yy]$ ]]; then
+        log "Installing Node 16.x via NodeSource..."
+        curl -fsSL https://deb.nodesource.com/setup_16.x | $SUDO_CMD bash -
+        $SUDO_CMD apt-get install -y nodejs
+        node_ver="$(node -v 2>/dev/null || echo "")"
+        log "Node.js after install: $node_ver"
+      else
+        err "Incompatible Node.js version and user declined install. Cannot build assets."
+        return 1
+      fi
+    else
+      log "Node.js version OK: $node_ver"
+    fi
+  else
+    warn "Node.js is not installed."
+    read -p "Install Node 16.x via NodeSource now? (y/N): " install_node
+    if [[ "${install_node:-}" =~ ^[Yy]$ ]]; then
+      log "Installing Node 16.x via NodeSource..."
+      curl -fsSL https://deb.nodesource.com/setup_16.x | $SUDO_CMD bash -
+      $SUDO_CMD apt-get install -y nodejs
+      node_ver="$(node -v 2>/dev/null || echo "")"
+      log "Node.js after install: $node_ver"
+    else
+      err "Node.js is required to build assets."
+      return 1
     fi
   fi
 
-  if command -v nvm &>/dev/null; then
-    log "Using nvm to ensure Node 16 LTS..."
-    nvm install 16 --lts
-    nvm use 16
-  else
-    warn "nvm not found; using system Node."
-  fi
-
-  local node_ver
-  node_ver="$(node -v 2>/dev/null || echo "none")"
-  if [[ "$node_ver" == "none" ]]; then
-    err "Node.js is not available; cannot build assets."
-    return 1
-  else
-    log "Node.js version for build: $node_ver"
-  fi
-
+  # Ensure Yarn
   if ! command -v yarn &>/dev/null; then
-    err "yarn is not installed. Install it with 'npm install -g yarn' and re-run this script."
-    return 1
+    warn "yarn is not installed."
+    read -p "Install yarn globally with npm now? (y/N): " install_yarn
+    if [[ "${install_yarn:-}" =~ ^[Yy]$ ]]; then
+      log "Installing yarn with npm -g..."
+      $SUDO_CMD npm install -g yarn
+    else
+      err "yarn is required to build assets."
+      return 1
+    fi
   fi
+
+  node_ver="$(node -v 2>/dev/null || echo "none")"
+  yarn_ver="$(yarn -v 2>/dev/null || echo "unknown")"
+  log "Node.js version for build: $node_ver"
+  log "Yarn version for build: $yarn_ver"
 
   log "Running yarn install..."
   yarn install
