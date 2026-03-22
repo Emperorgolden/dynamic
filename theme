@@ -591,15 +591,32 @@ inject_wrapper() {
 }
 
 # --- Function: build panel assets with Node 16 + Yarn (auto install/downgrade) ---
+
+# --- Node.js compatibility helper ---
+use_node16() {
+  warn "Pterodactyl frontend works best with Node 16"
+
+  if command -v nvm &>/dev/null; then
+    log "Switching to Node 16 using nvm..."
+    source ~/.nvm/nvm.sh
+    nvm install 16 &>/dev/null || true
+    nvm use 16
+  else
+    warn "nvm not found. Using OpenSSL legacy fallback..."
+    export NODE_OPTIONS=--openssl-legacy-provider
+  fi
+}
 build_assets() {
   log "Building panel frontend assets with Node + Yarn..."
   cd "$PANEL_DIR"
 
+  use_node16
+   
   # Kill NODE_OPTIONS to avoid OpenSSL errors
-  if [[ -n "${NODE_OPTIONS:-}" ]]; then
-    warn "NODE_OPTIONS is set to '$NODE_OPTIONS'. Unsetting to avoid OpenSSL errors."
-    unset NODE_OPTIONS
-  fi
+  # Only unset NODE_OPTIONS if it's NOT our fallback
+if [[ "${NODE_OPTIONS:-}" != "--openssl-legacy-provider" ]]; then
+  unset NODE_OPTIONS || true
+fi
 
   [[ ${EUID:-1000} -ne 0 ]] && SUDO_CMD="sudo" || SUDO_CMD=""
 
