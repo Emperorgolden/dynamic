@@ -9,23 +9,78 @@ NC='\033[0m'
 
 LOG_FILE="/var/log/ghe-theme-deployer.log"
 
-# --- Logging helpers ---
-log()  { echo -e "${CYAN}[INFO]${NC}  $*"; }
-warn() { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+--- Logging helpers ---
+
+log()  { echo -e "${CYAN}[INFO]${NC}  $"; }
+warn() { echo -e "${YELLOW}[WARN]${NC}  $"; }
 err()  { echo -e "${RED}[ERROR]${NC} $*"; }
 
-# Log everything to console + file
+Log everything to console + file
+
 mkdir -p "$(dirname "$LOG_FILE")" || true
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# Helpful error if anything fails
+Helpful error if anything fails
+
 trap 'err "Script failed at line $LINENO. Check log: $LOG_FILE"' ERR
 
-clear
-echo -e "${CYAN}=============================================="
-echo -e " Golden Hosting Enterprise - Theme Deployer v2"
-echo -e "==============================================${NC}"
+--- Animated Intro Functions ---
+
+type_text() {
+local text="$1"
+local delay="${2:-0.02}"
+for ((i=0; i<${#text}; i++)); do
+echo -ne "${text:$i:1}"
+sleep $delay
+done
 echo
+}
+
+loading() {
+echo -ne "${CYAN}Initializing"
+for i in {1..3}; do
+sleep 0.3
+echo -ne "."
+done
+echo -e "${NC}"
+}
+
+clear
+
+type_text "${GREEN}>>> Booting Golden Hosting Enterprise..." 0.03
+loading
+type_text "${GREEN}>>> Preparing Theme Deployer..." 0.02
+loading
+sleep 0.3
+
+clear
+
+--- ASCII DISPLAY ---
+
+echo -e "${GREEN}"
+
+while IFS= read -r line; do
+echo "$line"
+sleep 0.004
+done << "EOF"
+▁▂▄▆▁▔▗▗▗▌▁▖▝▖▏▖▏▁▗▂▁▝▃▏▏▏▘▎▖▗▆▄▂▁
+▁▂▅▔▞▁▎▃▝▆▔▂▗▄▗▗▁▘▁▏▔▃▅▖▁▅▎▝▁▆▃▃▋▎▍▁▁▆▃▁
+▁▄▔▆▎▕▁▝▌▔▘▝▁▁▔▄▗▔▎▔▔▖▖▍▌▋▘▂▁▝▗▆▗▖▁▅▘▌▂▗▞▔▅▖
+▁▃▁▞▝▔▁▕▘▕▖▍▊▆▖▖▆▗▏▅▖▔▎▏▅▝▂▁▋▁▞▃▞▋▅▂▖▏▄▁▁▂▆▘▃▂▅▁
+▗▘▖▔▕▕▂▝▔▁▘▝▞▖▘▎▅▎▂▅▂▍▗▔▂▂▝▝▔▔▔▗▁▖▔▃▗▌▝▃▕▃▔▊▗▁▏▔▔▖
+▗▅▎▕▖▁▖▘▏▖▝▖▎▘▂▏▘▖▖▝▝▆▁▖▃▘▆▌▃▃▆▄▖▕▝▏▂▍▁▗▞▅▔▖▘▋▁▃▔▖▅▝▁
+▁▘▔▗▎▔▁▘▄▘▘▖▘▔▝▄▗▊▋▖▍▎▕▕▘▎▝▘▕▔▆▞▍▗▋▝▞▄▍▗▏▞▔▔▖▝▁▆▘▖▂▗▞▔▝▁
+▗            ▊▌▗▌▄▔▃▅▘▖▘▋▂▃▝▆▁▘▃▝▎▃▅▖▆▖▁▆▘▖▌▂▅▃▂▃▅▄▍▝▘▞▄▃▁▘▁▄▝▔▁▝▂▗▏▝▁
+▍           ▕▗▖▘▊▂▊▅▊▝▁▆▃▗▅▔▖▖▔▔▘▝▊▄▃▅▆▞▗▁▄▁▆▂▆▅▖▃▆▞▞▔▁▆▝▞▞▃▄▝▞▂▕▞▔▘▖▌
+EOF
+
+echo -e "${NC}"
+
+sleep 1
+echo
+type_text "${CYAN}✔ System Ready." 0.03
+echo
+
 log "Logging to: $LOG_FILE"
 
 # --- Paths ---
@@ -124,23 +179,59 @@ if [[ -z "${media_url:-}" ]]; then
 fi
 
 # Strip fragments/querystrings correctly
+# --- UNIVERSAL MEDIA ENGINE (VIDEO + IMAGE SUPPORT) ---
+
+log "Processing media URL..."
+
+# Install yt-dlp if missing
+if ! command -v yt-dlp &>/dev/null; then
+  warn "yt-dlp not installed. Installing..."
+  if command -v apt &>/dev/null; then
+    apt-get update -y && apt-get install -y yt-dlp
+  elif command -v pip &>/dev/null; then
+    pip install yt-dlp
+  fi
+fi
+
+# Try yt-dlp extraction (works for TikTok, YouTube, IG, Pinterest videos)
+extracted_url=$(timeout 15 yt-dlp --no-warnings --get-url "$media_url" 2>/dev/null | head -n 1 || true)
+if [[ -n "$extracted_url" ]]; then
+  log "Video detected via yt-dlp"
+  media_url="$extracted_url"
+else
+  log "yt-dlp failed or not a video. Treating as direct media..."
+fi
+
+# Clean URL
 clean_url="${media_url%%\#*}"
 clean_url="${clean_url%%\?*}"
 
 file_extension="$(basename "$clean_url" | awk -F. '{print tolower($NF)}')"
 file_extension="$(echo "$file_extension" | tr '[:upper:]' '[:lower:]')"
 
+# Detect type
 media_type="unknown"
 case "$file_extension" in
-  jpg|jpeg|png|gif) media_type="image" ;;
-  mp4|webm|mov) media_type="video" ;;
+  jpg|jpeg|png|gif|webp) media_type="image" ;;
+  mp4|webm|mov|mkv) media_type="video" ;;
   *)
-    err "Unsupported file type '$file_extension'. Only jpg/png/gif and mp4/webm/mov are supported."
-    exit 1
+    log "Unknown extension, forcing detection..."
+
+    # Try to detect via headers
+   content_type=$(curl -L -sI "$media_url" | grep -i "content-type" || true)
+
+    if echo "$content_type" | grep -qi "image"; then
+      media_type="image"
+      file_extension="jpg"
+    else
+      media_type="video"
+      file_extension="mp4"
+    fi
     ;;
 esac
 
 log "Media detected: $media_type ($file_extension)"
+  
 
 ORIGINAL_FILE="$MEDIA_DIR/original.$file_extension"
 log "Downloading media to: $ORIGINAL_FILE"
@@ -167,8 +258,19 @@ download_file() {
 }
 
 if ! download_file "$media_url" "$ORIGINAL_FILE"; then
-  err "Download failed. Exiting."
-  exit 1
+  warn "Retrying download with yt-dlp fallback..."
+
+  if command -v yt-dlp &>/dev/null; then
+    if yt-dlp -o "$ORIGINAL_FILE" "$media_url"; then
+      log "yt-dlp fallback download successful"
+    else
+      err "Download failed completely."
+      exit 1
+    fi
+  else
+    err "Download failed and yt-dlp not available."
+    exit 1
+  fi
 fi
 
 # Validate download
@@ -606,8 +708,7 @@ use_node16() {
     nvm install 16 &>/dev/null || true
     nvm use 16
   else
-    warn "nvm not found. Using OpenSSL legacy fallback..."
-    export NODE_OPTIONS=--openssl-legacy-provider
+    warn "nvm not found. Skipping Node version fix..."
   fi
 }
 build_assets() {
@@ -618,9 +719,7 @@ build_assets() {
    
   # Kill NODE_OPTIONS to avoid OpenSSL errors
   # Only unset NODE_OPTIONS if it's NOT our fallback
-if [[ "${NODE_OPTIONS:-}" != "--openssl-legacy-provider" ]]; then
-  unset NODE_OPTIONS || true
-fi
+unset NODE_OPTIONS 2>/dev/null || true
 
   [[ ${EUID:-1000} -ne 0 ]] && SUDO_CMD="sudo" || SUDO_CMD=""
 
