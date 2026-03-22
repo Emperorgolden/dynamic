@@ -62,85 +62,158 @@ while IFS= read -r line; do
 echo "$line"
 sleep 0.004
 done << "EOF"
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%%%###%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@@%@@@%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%%%@@##%#*%@@@@%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@%##%@@@%@@%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@%@%#%%@%@%#%@@%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@#%@@@%@%#*#%@@@%@@%%%@@@@@@@@@@@@@@@@@@@@@@@@@@%
-*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#@=%#**%%%@@@%#%@@@*==++-+@@@@@@@@@@@@@@@@@@@@@@@@#
-+@@@@@@@@@@@@@@@@@@@@@@@%%@@@@%@#-=*#+++*%%@@@@@@%-+++#*=*@@@@@@@@@@@@@@@@@@@@@@%*
-=#@@@@@@@@@@@@@@@@@@@@@@#=**%@%@+-=*=-+####@@@@%%@=--=+=+%%@@%%%%%%%%@@@@@@@@@@@#*
-=+@@@@@@@@@@@@@@@@@@@@@@#++*#%@#*=*=----+*%%%@@%%%%+---+#%%%%%%%%%%%%%@@@@@@@@@@#+
-==%@@@@@@@@@@@@@@@@@@@@@%%***#*##====+*#@%%**%#%%%%%%%%%%%%%%%%%%%%%%@@@@@@@@@@%*+
---*@@@@@@@@@@@@@@@@@@@@%%*#**##+====#%%%#+*==*++**%%%%%%%%%%%%%%%%%%@@@@@@@@@@@#*+
---+@@@@@@@@@@@@@@@@@@@@%%#+=-=+###******=+=-+++*###+=---+#%%%%%%%%%%@@@@@@@@@@%#++
---=%@@@@@@@@@@@@@@@@@@@***-:-=+*+++**+*****=-=+==-::-++---*%%%%%%%%@@@@@@@@@@@%*++
----*@@@@@@@@@@@@@@@@@@#--==-=*+#*+=++-=-=%+-----=+===**=:-=#%%%%%@%%@@@@@@@@@%#*++
----+%@@@@@@@@@@@@%@@@%#=+++=**+++##*==+==##=-::-----=**=-==*%%%%%%%%@@@@@@@@%%*+++
----=#@@@@@@@@@@@%%%%%%%*+*####==***+:--==%*===-:::-+*#*+-=#%##%%#%%%@@@@@@@%%#*+++
-=---*@@@@@@@@@@@%%%%%%%%+-=*%#=+*+**-:::+#=--::=+***#%##*%#*%####%%%%@@@@@@%##*+**
-=-+=+%@@@@@@@@@%%%%##%%*=-=*#+=**+#******%+***##**##%=-+*-**#######%%%@@@@%##*++++
-=---+#@@@@@@@@%%%%%##%%*=@+=*+=*#+%****#%%%###*#%@@@%*+=*=+**######%%%%%%%###*++++
------+%@@@@@@@%%%%######+=-=*++**+#==++++#*+=-=*#%%@@#++**+**#######%%%%%###*+++++
------+#@@@@@@@%%%#######%--=#**#**+**=-=##==+*#*###*%%+-=***########%%%%%###*+++++
------=*%@@@@@%%%######**##*###******=---**=++*#++##*#####*##++#######%%%#***++++++
-=-----+#@@@@%%%%####****####**#%=--#%***#@***#%#**#####%*##+****#########***++++++
-%%----+*@@@%%%%####*****##*#####++++=-==*#-==+#***#*####*=%+=+*+**######***++++*#%
-##----=*#@%%%%%###*******#*****#**=**===+%===+##*%###*###=+*+=**#**####****++++*#%
-##-----+*%%%%%%##********#******#=+*#*#******#%**%#****#%%*++++*#**####***++=++*#%
-#*-----+*%%%%%###***************%****=-+******#**##******#%*=*++***###****+==++*##
-#*-----=**%%%%###***************%#**##+*+**#%%######*******#***+#***#*****+==++*##
-*+------+*#%#%##****************#*##*##***#*##*##***********#*#*#***#****++==++***
-*+------=+#####*****+**+******#**++**#**%##*****+++*********#*++*********+=-=+++**
-*+-------+*####*****+++*****+**%%#******##%#*#*+*+**+********+=-=*******++=-=+++*#
-@#-------+*####*****+++***+**+=+**++****##******+***#*******###%******++++-==++*%@
-+*-------=+*###***++++++**+***#%****+**+##****++++*#%#**+***++==*#*+**+++=-==++***
-+*--------+**#*****+++++++++**++***##**###**#%*++%@#++**+++*+**++#*++*+++=-==+++++
-+*--------++*#****+++++++++****++++*****######==+**==#%#*+***+**##*+++++=--==+++++
-++--------=+*#***++++++++++*%%%**++++***%#%**%*+++*-=***+++**++****+++++=--==++++*
-++--------=++****++++++++++++++++%*#%##%%%%*#++*++=-=+**++++++*****+++++=--==+++++
-++---------=+***+++++++++++++*+=-=*+*#=*#@@%*+-=#*--=+**+++++**+**+++++==--==+++++
-++---------=++**++++++++++++*%+---+##*--**%%*==-+*--=+*++++++****++++++=---==++*++
-#*=====++===++*+++++++++++*#%%#==--+#*==**#%+-=-=+-==*%#*++++*+++++++++==--=+++**+
-*#++++++++++++++++++++++*##%%%%+=--=*+-=+*#%+=+++*-=+#####*+++++++++++++===++++**#
-+#++++++++++++++++++++*#########+=--++=--+*%*+==***+*#######*++++++++++++++++++**+
-+#*+++++++++++++++++************#+==+#+-=*###*+**-=##**********+++++++++++++++*#*+
-+%%#*++++++++*+=+****++*+*********#%#+**********#==#****++++*****+==+++++++++**%**
-+%@@#*++**+++*++*++++++++++++++++++#*++*%%*++**+=##%%*++++++++++***+++++++++**%%*+
-+%@@#********#***++++++++++++++++++#*+++*+*+++*%##%@@%*++++++++*****#********#%@*+
-+%@@%***#***++++++++++++++++++===+***+=++#+=+*#@@@@@@#%*======++++++++*#*****%@@*+
-%@@@%#**#*+++++==================++**+++*@%==*%@@@@@%###+----==++++++++****##%@@#*
-*%@@@#**+++++++===--------------=*=**=++#@@#=#%%%@@%%###*----==+++++++++***#%@@@@#
-*%@@@**++++++++===---========---+#-+#++*#%@%**#%%%@%%%##*=---=++++++++++****#%@@%#
-*%@@#**+++++++++==--=========---*+*=**+++#%@%*#%%%@%%@%*+----==++++++++******%@@%#
-*%@%***+++++++++==---========---++*+=*+*=*#*#**###%##%#+=----==++++++++******#@@%#
-*%@%**++++++++++==--========----=*+*=**+=*#+**=*#######+-----=+++++++++******#%@#*
-+#@****+++++++++==---=======-----++*+*+*=*++**==#**##**+----===++++++++******#%@##
-+#%****+++++++++==--------=------=****+*=+++*+--+**###*=-----=+++++++++*******#%**
-+%***++++++===================--===*+**#+++**=--=#****+=----=====+++++++++****#%**
-##**+++=+==========================+#+**#++**====%***++-==---======+==+++++++**#%*
-**++++++++++++++++++++++++++++++++++#*+*+++**===+#****+===+===++++++++++++++++**#%
-*****++++++++++++++++++++++++++++++**#+*+********#**###****+++++++++++++*******#%%
-++++++++++++++++++++++++++++++++++++***+****++++*+****++++++++++++==++++++++++++++
-+++++++++++++++++++++++++++++++=+===+**=+***++++#%+*#*+=++=================++=++++
-=========+++++++====++===============+*+**#*==++*#%##*+==========================+
-==============++=================+++++**+***====***#***++=======+=================
-=====================================+**+++*====**+#**#*++=============++=========
-================+==+++++++++++++++++++**+++*+==++*++*+**++========================
-===+++++++++++++++++++++++++++++++++++**+*+*++++**++*+**+=========================
-+++++++++++++++++++++++++++++++++++**###*####****#*+***#*++++++=========+=======++
-++++++++++++++++++++++==+==+++++*##%%%*+++**#%%%@@@**#@@%#*****+++++++++++++++++++
-++++++++++++++++++==+++++++++*##%@@@@%*+++**#@@@@@@@@@@@@@@@%%##*****+++++++++++++
-+++++++++++++++++========+*#%@@@@@@@%#**+****#@@@@@@@@@@@@@@@@@@@%##***+++++++++++
-++==++++=++++==+++==++++++*%@@@@@@@@@%#*%*#*#@@@@@@@@@@@@@@@@@@@@%%##***++++++++++
-++==++=++++++++=+====+++++++*##%%%%%@@@@@@@@@@@@@@@@@@%%%#####*********+++++++++++
-=====++++=====++++++++==+++++++****************************+**+++++++++*++++++++++
-+=====+++===++++++===========+++++++++++++++++++++++++++++++++++++++++++++++++++++
-++=====+====++++=================+++=+++++++++++++++++++++++++++++++++++++++++++++
-=============+++++============================+=++++==+++=++++++++++++++++++++++++
-==============++++==============++=============++=++=========+===++==+++++++++++++
+$$$$$$$$$$$$$$$$$$$$$$$@@BBB@@BBBBB%BBBBBBBBBB@BB@BBBBBBBBBBBBB@BB@@@@@$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$@@@@B@BBBBBBBBB@oB8%8&BBB@@BB@@@B@BB@@@@@@@@@@@@@@@@@$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$@@BB@BB@@B&BBBBW#WZwJm8B@BBBBBB@BBBBB@@BB@@@@@@@@@@@@@$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$@@BBBBB@BBa&B&hoWkmk#pb%B@BBBBBBBBBBBBBBBBBB@@@@@@@@@@@$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$@@BBBBBBBBB8&kmbBB&ka*@Wq8BBBBBBBBBBBBBBBBBBBB@@BB@B@@@@@$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$@BBBBBB%BB&dB$B&oBBB%@@ph&BBBBBBBBBBBBBBBBBBBBBBBBBBBB@@@$$$$
+$$$$$$$$$$$$$$$$$$$$$$$@@BBBBBB#*WdqM&WCCMwO%@@&8ZWB%%%%%%%%%BB%%%%BB%BBBBBBBB@@@@$$$
+$$$$$$$$$$$$$$$$$$$$$$@@@%%%%%%%hbokoBOqaJukMB@B@%#%%%%%%%%%%%%%%%%%%%B%%%%%%%@@@@$$@
+$$$$$$$$$$$$$$$$$$$$$@@@B%%%8%%8#k&@@#8@8ZdphBBaW$WM%%%88%88%8%%%%8%%%%%%%8%%%B@@$$$@
+$$$$$$$$$$$$$$$$$$$$$@@@B%88888%kWB%8kkB#wqoB&bL%@kM%8&&&88&88888888%888%%8%%%BB@$$$%
+@$$$$$$$$$$$$$$$$$$$$@@B%8888888a@@BoW*qZ*#kW%wwo%*W&&&8&8&&88&8&8&&8&88&&888%B@$$$$&
+%$$$$$$$$$$$$$$$$$$@@@@B%8&&&&&Wb%&B#BB&BW#0Za&UB&a#&&&&W&&&&&8&&&&&&&&&W&&&&%B$$$$@o
+*$$$$$$$$$$$$$$$$$$@@@@B%&&&&&&*bM8qbB@8oa8dJChM8$W*WWkZkMWWWW&&WW&&WWW&WW&888@$$$$Bk
+d$$$$$$$$$$$$$$$$$$@@@BB8&&&&W&&dWOkq8@d*0%B#0UhB@hMoczXUuaMWWWWWWWWWWWWWW&&8%$$$$$%d
+O$$$$$$$$$$$$$$$$$$@@@B%8WWWWWWobM|pdQ|dMaW%@#dmW%##t(}tc]/oWWWMWWWWMMMWWWWW&@$$$$$8m
+XB$$$$$$$$$$$$$$$$$@@BB%8WWWWW&MhW]/bkh*amBhW88*#%*b]\JJOX1LWMWWWMWMMMWWMWWW%$$$$$@&L
+rW$$$$$$$$$$$$$$$$@@@@B%&woWMWWWhk-]\C{}1[pda#BBB#o0?\(YpY1Y#MMMMMMMWMMMMWW8$$$$$$@oU
+/h$$$$$$$$$$$$$$$$@@@BB%WXnmoMMMaL__rt?r*0YQ**8%&hoq_+)U0[?O#MMM###MM##M#MWB$$$$$$BdY
+|O$$$$$$$$$$$$$$$$@@@B%%WLczU*#*&Q{}LJ{]|JZakMM&Wb#*)~_}nzXb*#####*##*####8@$$$$$$&mc
+\X@$$$$$$$$$$$$$@@@@B%%8MXXnUd##Mq\Ucx?~+}zzk*B@ko**Y_~<]nJo********###*#W@@$$$$$@M0c
+|f8$$$$$$$$$$$$$@@@BB%8&Mk}ccw*#Lz[mzj++]xz*Bq#88MM**Y-~}Qo***o****o*****B@@@$$$$BoLv
+)(M$$$$$$$$$@$$$$@@BB%&&M*w(YzdooC)[({?1vZ%Wdt#Wo*****oa*o*o*o*ooooooo**MB@@@$$$$%hUu
+)[h$$$$$$$$$@$$@@@@B%8&W#o*aZQL(vJmjuUwoB&bb0}Qjjw*oo*o*oaoooo*ooaaoaoo#&B@@@$$$$&dXu
+}]Z@$$$$$$$$$@@@@@BB%8&W*kzhqjLJt|un/Z*WWbwJz_Cv)xLp*oaooaaooaooaoaaaooW8B@@@$$$@&qcu
+[]Y%$$$$$$$$$@@@@@BB%8WW*oCxxCb*Qn1_?XdZqwjz/+)m0Jvnq#opmb*aooaaaaaaoa#&%B@@@$$$%#Zcu
+]]nW$$$$$$$$@@@@@@BB%8WM*abun]-vmmUzvXQZux?X-[t[)UCOwU[_+_tahaaaahahhaWW8B@@@$$$8*Qvu
+??\#$$$$$$$$@@@BBBB%8&WModt+~_|CJhkO0dJcbxcv|zQmJwQZ(~?\\|[coahhkahha#M&%B@@$$$@&oCuu
+]?{h$$$$$$$@@@B%BB%%&WW*ZQt+<-frOYOvvZjz0mXcJ][vr}1-<<}zu-}}cakkkkkh*#W&%BB@@$$BMkUuu
+]?]w@$$$$$$@@@B%88%8WWMh]{O)~_xJp{]tnCnz-[Od|~++{r\-+-tJz}~_tbkkbkka#oM&8%B@@@$8Mdzuu
+???J%$$$$$@@@B%%&W88&WMO+_{x-{OrwOfjxv?}}?XQ[~~+~]|tf)f0Y)~+\pkbkkb*M*#W8%B@@@@M#qcnu
+??]vM$$$$$@@BB%8&MM&WM*J_{?[?cZtLkwJmt+_[fkCzt_]<_tn]?/LCt~~_Lbbbbka*oMW&%%B@@%oa0vxn
+?-?ja$$$$$@@BB%&W#*MW#oQ]jjn|OYXfrLLCt//z{COv-<<<?1(]_}QXf-]{Jdddbbko*#M&8%BBBWakJunu
+???(p@$$$@@@B%8&M#oaM#opuvvu0ZXz(rZwC+]tnc0o|+><><<~+fnZYt)rcwpqpkpkaa#M&8%%B%*kdYunv
+]--]ZB$$$@@BB%8&M**aa*oonfCpm*L|?CUYX+<+11Cwv(({<<<+}UXdUu}(Ohppbdpbaa#MW&8%%8hbwznnv
+]]?-L&$$@@@B%%&W#oahdook&aX1Q*M_1XXv0+<<~~cU|r/({+-|LL08dcXLhoqwpqqbkh*#W&88%MddZvxvX
+j}?-co$$@@@B%%&M#ohkddokbj?tQm&-xzcJJf+>>]bz?+<>+fYCUXmkLmZhpXbdwqqdkho#MW&88odp0unzz
+/x1?xb@$@@BB%8WM*akbdqobJ|+-dmp?cYzO|c\-tw#px]+?UZQUCJkj-vMJbrbwwwmpbka*MW&&WbqwCvuvv
+1]f\\m@@@@BB8&W#*akbqw#kv\}(QQJ+UJvqUJCJJJqCnzYOwJJL0Wp\_)Q{rQZwwwwwpdh*#MMW#qwmJvnnu
+{-?(j0%@@BB%&&Moohbdpw*dOJcY1Lz?CZQpXXzvLQWdCUUJXYCw%@knj{L|j0JwmmZmpbhao*#WawwZYnnuv
+{--]}OM@@B%%&W#oahdpwZkmc|o{]UX}0OcqkwZmmqzphbbpkM%@$$WCu)CntCXwZZZZqpbhao*obmmQcxxnc
+}-?--zh@BB%&WMMokkdqwOkOL\u+?JX{CJuOQtu|?{JUu/|/Xd*a%@%XcJQL(YXqmZOZwpbkhaoawOZLurnuc
+}--??xw@B%%8&W*ohbpwZZbZpd[_fOU(JQCq\]nYCO#hwL\)jC0kk%@0/]uXnXLOZOOOwqbkkkakZ0OYnrnuv
+[?-??fQ%BB%&WM*akbqwO0mO0k+_j0YrJOUzJLn--YWx|rOOXz0dmwBbf+\Jzzw00O00mqdbkhapZ00znrnuv
+}-???)LMB%8&W#*hkdqm00O00q-_jwJcwYC|YM|?+cw/[t\Ow0UhLzadY)(LJJOp00Q0Zqddbkbm00Czxxxuv
+[--?-]Jk%%8&M#ohbpqm0Q0QQdXvLbwz0YQLJx/t?n0{fnCZpfvpOuwOkLQQmqx)q000OwqdbkbOQLJurrxnv
+??-?--Xq%8&WM#akdqmZQQQQQwaOLb0vmz?X*(__~jq{[r)JZfzQUCZ0Z#dLpUJrQkLQ0wqqpbq0LCYnjxnuv
+?-?---vO8&WM#*abdqmO0QLLQmZhQJQX&{??wkzrjOaLncvO#LCYpm00waCwwuYCz0ZQOwwppdmLCCznjxnuv
+U|]-?-jJ&&WM#ohbpmZ0QLLLLmZLqcOmbt\_)kLUdb%d0JLM%prXbQ0ZmqXzbujUrnQQ0ZwqpqOLCCvxfxxvY
+aq]-??\Ja&WM*okdwmOQCCCCJmOCQqpQOCxurt?\)cp)?{tJOxXYpQOOwoJfku}czuUCQOmqqwLCCUurfxzw*
+kq???-{UdWM**akdqmOLCJJJJOOCJCCZJYxxa/{|(\Q[{x(zmZJpmLZL0bY[wJ\}mLYJL0mqqmLJCUxjjrYaM
+dq?-?-]YOW#*oakpqZQLJJJJJO0JJCCCZ0Y)OQ[f(|wx}/rXb0UMQZQCLbOtjpx?vmOJL0mww0JJUzxfjxXk#
+OZ]-???vJ##*oahqwZ0CCUJJJ00JJJJJQdzJ}mzzYJoozuUwZfXa00CLCpO0/rQ(|QmLL0ZwmQJUUcr/rrXd*
+dQ???-?xUo*oahbqw0QLUUUUJCQJJUCJJm/ruLamwZpbwwp&wUJoLCCCLLkpQtzx|QLJC0ZwmCUUUuj/jxYbW
+bC]-??-/Xd*oahbqm0LCUYYUUCQUUJJUJ0jxCd(c{[}]]/vQ#wzhLJCJCCL*pj(YtXUUL0Zm0CJUYrjtrxXpo
+wJ???-?(XOoahbbwZ0CUYYYYUULUUJUJJdwczo|){CwpQJ0UmxXZZJJUJJJQdL1XXnLUJQ0ZQUUYYjt/rxXmp
+ZU???-?[XLaabbbm0QCJYYXXXJJUYUUJYbOmUOu?/vJJUZh0ULqQmJUUJJUJ0bczLfOUJC0ZCYYXcr\\rrzZw
+0z]-????zXkkbbdmO0LCYXXXXLUXXXXXYpqJOmkYvQtJQqd*p0Q0ZJJUUUUUYbZv0jpUJL0OJYXXuj|/rnYOw
+Ov]?]???xzdkbdpO0QCUXzzYXCUYXXzXJwpwZ0J0QqC0LZU0OwCpQqJUUUUUUQZcOYZCUL0LUXXYnf)trxX0m
+Yu?]?]?-fzZbdpdOQCJUzzzXXLXXYXXLYQZZmCOQ0QYwLCLJLOQCOzZYUUUUYUOLpLm0ULQLYXzXxt)/rxzCQ
+Yn]?]]??\cCdpqpOLLJYXczzcCzzXXXmOUuxXJmQC0LmLQQLCwUXUOOUYXXXYXOCLXCmYJLCXXzXj\)trncJJ
+Yu]?]???1vYdpqw0QCUYzczzcCzzzXXJJCJUzzmzLZOwC0JCUCUcvn0UYXXXXX00uxvQUJCJXzzcj|)txnzJU
+0c]?[?]?[uzqqwq0CJUzzccczCzzzzXwLUUuzXzCcbC0*ZLLJCLCJznOXXYXXXYL/{{0JJJYXzzuf))trxzC0
+vc[][]]??ncZqmq0QUUYzccccJzczczUC*ZCccCJLQLdZOwCXCCY0qXUzXzzXXzL/\/xLUYUzczxf})/jncYQ
+mU}]]]??-fcLwwqLCJXXcvvccJzczzJrcfxuJzvCYOpCQOJUXYYYXCYXCXzzzzYqLOnXJYYXXzcxf}(jrnU0w
+Q0[?]]]]?\cYwZqQJJYXzvcccJcccvz}XLUczzUYCX0mcUJQQLuUCQY0YXzzzXq0fX0OYXXXzccj/]1fxuXkb
+uC]]][[??(vcZmqLCYXzcuuucJcvzXcChCXXXXJbcOozLXCXccuczp&zOzczzYnYf(nwXzzXcvcf|])frucYC
+nJ]]][[]?}uuQOmCJUzccvcvvYcvcCzvzYzcqOYUQOqqYZcuucYJ0vcXQccccmncu\xmJccXzcuf)?(frnccY
+nX[[]][[]]nvC0mCUXzzvnuvuzvvuCufrXzvaJUCLmbY0zZdQUL*8O(/CXccvCuXZju0Qzczzcnt{?(fxnvvX
+rX]][]]]]-ruY0ZJYXzcuuuuuvuvvCYXXzXYXzu0aZpQUbWX{j\kwLqka0ccc0YL0rzCZccccvrt[]|fxxcuX
+xz]][[[[]?/ucLZUYYzcuuuuvvuvuCUznxnzUcJLLbbJdzov-xuqzf/k#qvvzCYXYLXa0vvccvr/?[|fxnunz
+xz]]]]][]?(uuCZJXXcvuununuuucZwUnrtrvJQLZC0dJfWC?fXCn}jXaUcvJUXzvCJ00vccvvj\-[|fxnvnc
+xc][[][[]-1unJZJYzcvuunnunnuz8WkOnjxnvXJLkkoCj*brjjUj}fvqvuvvUzvuYc0Uvvcvvf(-[|fxnvnz
+nc[][}}[]?[nnYOUYzcuunuununnuJhc0bbQcnnvXQw*OLLcpt\u|{/uqvuvuvvuvYxUYuucvut)-[(fxnvnX
+xv[]}[[}]]]rnzOUXzcunuxunnuunnL1nrbUwokbh#Q8QJO(n0\u(]fjZvuuuuuucZJLcuucunt{-[|jxucuc
+rv[][[}[[?]/nuOYXvuunnxuxxnunuC{n)uYumaZJZZWkCz(_0cX}_|j0vvuuuucccvLXvvvvrt[?[|jxuvnz
+xc]]]]]][]?|nrCXzcuunxnnnxxnnnUr\?)L)nmY\Ca8#ZC1_\ac?-\nwvuuuuuvLnzcunuvvrt]?[|fxuvnz
+rc]][]]]]]?1nrJXzcvnnnnnnnxxnnYv}??xYfXj?XQW#wY\??dx_?fzmunnunucJCLzuxuuut\]?[\jrucuz
+xc}}{{}{{{[{xxXXccuuxxnxrxnxxzhY]{-|Qqw1-jXhhmc)1?ct_-|vOvxnxnvYYUzunnnvn/)?-[(fxvcnX
+nX|/\\//t\|(rxzXccuurrxrrrxxUoMZ[(-}ck*[-tYO*Z\?|-j/__{vbCnnxxn0znxxnxnun/{]]}|jxncuz
+dLtffffjrff/rnczcvnnxrrrrjrCa#ok{t]?nU*]|xJX&0{]t-j(?/tzak0xxxrxunxnxxuunf|11)/jruYLX
+0mrjjjrrrjjrrnvcvuxnrrrxrx0dkahorr[?/vq[(vYC*L1(njY/?|nLkdp0unxxxnnxxxnunr/\\tfjxuXZp
+v0xrrrrrxxrrrncuvnnxjjrjuZwqddppU([-{zC[1jnYhCx//uCz[fcwqqwmmuxxxrxrxrnvuxjtfjrruvzXC
+uLnxnrxrnxrrrucnvnxxjfjzZmmmwwmmw)[-?rc(?)}XdOv/)tObxx0qZZOOOZcrrxxjxjnnvxrrjrrnucXvX
+nOvunnnxnnnnxucrvnxxjjY0O0O00ZO0qQj1]\ur-[(Xmqcf?/Lr0cZ0QQQQLQOzjjjrrjxunxxxrxnnvzCvz
+xmYvnnuncunnnvzfunrrrUCCCCLLLLLLCpr/{jvU?[rYqqJx(vU}nCQLCCJCJUJQYjfjjjxvvxnnxxnuvXLvc
+rwUznnunvnunnuvtnnxuYYYYYUJYUJUUU0QtfxXh|)nQdCpCXhx-fbUUUYXYXXYJCJjfffrucnxnnnuvvUZzz
+rdwLcuvuvuuuuvv/rnvYzXzzzzXzXYYXYXUZCCJ0XrvXQXUqUou[uwXzXzzczczYUJJj/frvzuunuuucXCkzY
+jakqXvvvzvucvcz\fzzvcvvvvvzzcccczccUd&xj0Uz0XccwvfOjcoLvcvvvcvvcXXYCxtjucvvvuuuzUO*zX
+rkMMQzcczcvcvcztzXuuunuunnuuuvvvuuvnmZj\JLbmccvZctzJUowCuuuuuunuvczXCvjucczcvvcXLdMzX
+raBBwzzzYzzcccLYzcvvnnuuunuuuuvuunnnbjCtzJbOnunXkXjOaWkpuxnnnnuucccXYLUczczzcczY0*&XX
+ra$@bXXYUXzzzJwUXzvuunnnuxnxnnnnxxxxhuUfrCY0nnxvw*Cq#W&ZZjjjjjrnuuczzJOQzzYXzcXUmW&zz
+ra$@hYYYCYXXUUzvvnxnxxrxxrrrrrrrrrxnCLxf|UuUxrxUO8hoW&Wpof/t/tjxnnunvvcXLYUYzXYJq%8zz
+ro$$#JYUQUYCzunxxrjjjfjfjjjjjrjjfffXvZ(utzz0ffrJd8%&WW#qaC)1)1(trrxxnunvvQ0YYUULkB8Xz
+v8$$8CJUZJJzunnxrjt//t/t///\t/\\\|fXum/cjuLh|(rQo88&W&oZbw1]]][|fjrrxnuuczQQYUCO*@%YX
+oB$$B0LCpLvunxxjft){())())()1)11){jvzmrxnud%u}nw&&W&MWhQd0n]??](fjjxnnuvvvzL0C0mW$@XY
+J#$$@ZLQCvunxxrft|[}}}}{}}}{[}[[[}zfJmrrcvoBh]uw&&M8*Mh0dQJ]??}(frrxnxuuvczUQdZp%$@kY
+Jo$$@q0Yuunxxrjft|}[{{{{{{{{}{{}}{Q|cd1xXc#&8|vO*#MW*#bqp0L{]?[(frrxnnnvvvcXUCbh@$$ah
+Jo$$@dYccunxnrjjf\}}{{1{{1{11{{}}1d{fqfrYU#W&UYOaooM*#bddpX(]?[|frrxnnuucczXYJCa@@@ah
+Uh$$BJczvuuunxrjf/{}1{1111{111{}}\q{)QL)Ycp*MbXQboh*##bdpqc(??}|trjxxnnvuvcXYYJQ&@@bp
+Xh$$*Xzccuunxxrjft1[{{1111111{1{}jzu/vk1XcJ#o%zCpabhMMk#qLc1]][(fjrxxnnuuczXYUJ0*@@bq
+Yh$$qXzcvvunnxjjj/{{{{11)11111{}{nnQ\\*/uXnko@zOdhpk#*bBwUx[]][\tfrrxuuuvccXXUJ0a$Bdw
+Xh$$LXczuuunxxxff\{{11111111){{}}xrOr[wvucrpbkmzmZmp*apWwzt]]]}|fjxxxxuvvczXYUJLd@Bqw
+zk$8UXzcunnuxrrjf\{{{11111111{{{}\XYY[zJucfmCQb(Q00pkqpbwn/]][}\trrnnnuuvccXYUJLw@Bpm
+Yk$aUXccunnuxxjft/}}1{11)11){11{{{JjL(jLucrOUUOn)dLwpmd00c)]]?}\ffrnxnnvvvzXYUULZ%BmL
+zk$wYXzccunxxxjff/{{{1)1)1111{{}}}J(Cn/QvxrwUULU]wQmqQpQ0x[]]?}(ffrnnnnvvczzUUJLZW%ZQ
+nb$CXXccvuunrrrjf/}}{11)111111{}}}cfXX/LcjuQuQQY?z00ZCmL0f]]?]}\frrxnnuvvccXYUJCOo%d0
+jb&UXzzcuunxxrjjt\}}{{{11{11{{}}}[|LzXnCvfrcnUUX?)OC0C0QJf[[]]{|ffxxxnuvvczXXUJLQb%Xp
+rbhUXzzvvvnnxxrjf/}{{{{{{{{{1}}}}[{Qv0UUurjuxzUr-?LYQCQOc/]]]]}|frxrxnuvccXXXYJJLm8XY
+rbwUXXzcvunxxxrrf|{{{11{1{{{1{{}}[}jCcYJvctnnzc/?]XYLC0Ov(]]]]}|jrxxnnuvcvzzXUUCLOWzz
+rhQJUYXcvvnxxrrjft\\\/|/||((|()(1((|0rzJvO\unYc/))umLUJUc|)1)1(tjjxxxrxxnncvzXYJ0macX
+n*dwQJcnrjft/\|||(11)()()(((())){1{1uJuUca|nnLj1[}jOYYJUu}}{{11(|\//tt/ttruvcYULOq*cz
+OdUcvuxjjjffttt/\/\\\\||((1)(()))1()\hfXcwxnv0\[]]tmYCzYf]?]]]?]{1)(|\\t/tfxxnuvz0b0z
+0Ucnrf\1}{}}[[}}}[}[{}}{}}}}{}}}}}}}}pXnzYJuvZ|[}{rmzJXzt]11{)1)()(((|\(|/fxxuuvczQpU
+LXvvunj/////\//\\\\\\\//\/|\\\\||\\\\Lp/zuUnUQ\))(nZcXzzj())||)(||||||\|\/frxxnuvzYLk
+0CYzcvuxxxxnxxnxrxnxxxxxrxrrrrxrrxnnnXbfzuYvJZxrjjumcXYCunxxnnxrt/|)(fffj\tfrjrrnnucX
+ZQJYYzXccYvXJYXXXzvzzzcXzzzccvuvvvcXYUwCuYUuJZzXXYC0UYQdLYzccujrjrrjjjrxxxxvXzYUULmdd
+YzzXzzzzczczzczzczzzzcvzczzcvccunuuvczZLfYUcCXvuuvQzcYYCxjrfjt/|///ttfjjjrfjxxjfrxnuv
+cccvccvvunuuvvvuunuuvuuvunvunnunnnnnxnOzjXXU0nxnnxQnXXCYjrxnnxnxxjjjftjxxxxrxxrxnxrnv
+nnuuuvvvvuuuvvvnxxnrxjxxrnxxrffxjxxrxjXznrzXCxjxxnwxncYYrxrxxrf/(||(1|||\t//\/\tfrrxx
+xxxrrxxxnxxjxxxrjrrjrjffjrrjjfjtft/t\fxYvrXXwjjjjxdZYJOYr/tt/\1{)1))|\\ttff/\frffjjjx
+tftffjtffffjjjrxrjjjfjjrft/ftffffffft\/Jc/UXdtttjrbb0QZJ\)|/j/ft|(|(11t\//\/t/ftfffrr
+///tftftjjrjrxrxt/t/\ftt\\|/f/////t/(\\LufQYZ(/rrrmZOmmC\//\(/\)|/()((|\\(1)|)\||(/ft
+\||(|\|/tt/t/f/ftt///t/t//\()||)()\tfjjQcjLXOttfftCJp0qccrr/t|\\|\/jfjt//\|)1){1{|/\/
+|(((())11|\/\\fjjj\\\/tt/)))(/\|\(tjrjjXXnvcQ/tf//QJZLQXQ/t\tttfrrxft\\/tfft/\|/\|)\t
+{)(1)1{{|||//|/||(|\/fff\/t||||\()||//txLcxrL/{|tjLcY0XYmvnxrf//t||/jt/\tt/\\()1)|\tt
+1{{)1()|(|\()|(\t//|t/ft|(|\tttttftjjfffZUrzCx\/tfYcxmvzQQtft\\tfjf\(|\\/jfrrjjfft/\|
+\tt|(|ttt\\\//\ttt|\tfffjtfffjrrxjxxrrxvQnxccY\//rnYjLvvzQnxr/t/|)(|jjfjt||/\/||(|ttt
+t/ttff/jfjfxfjjjjfrjxnxxjxxxrxnnnrjjfrrumjtfnztttjnznUXxcLYf/ttfjjxf/|\\/\t/tt//|\|((
+tffttffffrrjrjrxnrxrnnunxnnuuuuuuunxnffn0XXzXYtfftYnnnJvUUnf/\\|)11}1\/))((|\|\||/\//
+ffffrrxxrrxxxxxnnuununuuuuvvnnxunnjjxnuYLvXccUnrxnCUxuCXLvYj((()(ttrft/tfrxrjfjrrjfft
+xnuxxjrrrrunuuuvvunuvvvccvvunxuxrfnvcczXZpQpkmcczzJZvfJOXwYXuuurfttttjjjffjfrjt/tttjj
+jjfxnxnuunnxnnvuvuvnnxnxuxxjffrrxvvcCZbdQjXQLmZJJ0mkOnOUmqXcuuunun/)||tttttf/////fjjj
+rnnxnxxrxxnnnnnnnnnnxnxrffttjxxvccJwqwdmnnvLCOddkaWBpuCpaMoQUzzzcunxjtttfjjjjffftfjjj
+xnxnxxxxnxnnnnrffjfjjfttttjjrnvzUZwpo&WbunuXUwbBB@$$Bpq#8@B#bZOCCJYunuuurjjrxxrxxrrxn
+xxxnxxrjjrrjrjfrjtt/tffrjnnvvcYLwp*%@B8JuuvzY0h@$$$$$B%B@@$BB#hddOCJJXcuuuxxxxxrxxxnu
+tfrrrrjjrxjfjffffrrrxxxrfjxuUQwh#%B@$BMcu\cumw0*$$$$$$@@@$$$$@B&*ahwQCJJUurtjffjjjrff
+xrjfrrxrnxrxrjjjfjf/t//\\tnUma&B@@@$$BqJzCXCQvQw$$$$$$$$$$$$$$$@BB&opOCUYXunxnnxxnuuu
+ttjrrftfjffft\\/|(\\//ttfxc0a&B@$$$$$#qOCYQzm0Qp$$$$$$$$$$$$$@@BBB%8#admLJcnnxrjfrrxx
+rjffjxnrfjfjjf/tjjftffffjjuCk&B@$$$$$8hOqOwmmLh@$$$$$$$$$@@@@BB@B%8#odqQCYzurxnnnnuxj
+ttjrf/fjjjjfftrxrjjrrrjjfxnUwbW%BB@@$@B@#koa8&B@$$$$$$$@B%88%WWM#apmZLCLO0Lzzunrfrrff
+rrt\fftfrxrrjfjtftt/ffjjrrnuvJLwdbkk*W8%B8B8BB@@$@@@@BM*kddwmZQOJYJJUYUUzuvnnrxxxxnnr
+tfjjt/t//\|\\ttt/ttt//ttftjxvcJCJCQQQQQZmmpmwwqm0OZmO0LCUYXXYXXXYcunxuvnuuuuvvnxnxxnx
+ft\ftfrxj/\tfftjrxfrjjftffftfxxnvcvcUUJCLCJYUYzcvzXYYYYXXzXXzczzzuuvvczvczccvcuxnnrff
+jjjffjxxrffttrjrrjtft/\\///\ttfjffjrxxrxrnnnnuuvuxnuccvcccvvvuuuvuuunxxxxrrxrxnxjxxxn
+f//t||/ffttftttjxrjtttttt/tjffffrrrxrrrrxnnuuvvnnnxuunxuxnnuuuunnnxxjrxnunnnxnvnnnrrr
+rxt///|\\\tftt|(|(((||/|\//|/tfftrxnnrjrfxfjrxrnxxnxxrrrjrrxxxnxxxxxnnuxrunnnxnxnxnxx
+ttt\\/jrffffrrrrrrxr/ttffftt\|ttjt/\/jfffjxnnxrrfttffxxjxrffjfjjjrjxxxrjrxxxxnnnxxxrn
+rt/t|\tt/ftfrrrxrrjff//tt//\|(1{)(||)|tjffjrnxxxrftttf/t/tf/fftftttffffjrnnnnrxnnunnx
+\/|ttt/t\t\/\tfxrj/ttj|///(|1(||(/f/\\f\\|\((|1(//jffjtfrjfjfjfxrfrrxrffxrxxnuunnxrxn
+//)t|/|(|\\\\/\rfxfttt|\(\\||(1{(jrf))//ft/\ttfffjjt/f//ftff/tffjtfrxrtfrnxuxvuunxxrn
+\t)f(t(\\///t/trft\/fj\\//\()(|(1jxjf//\\tt|(\|\/trjjrt/t|t/\\tff\tjtt\/jrrnrxnnnnnnn
+
 EOF
 
 echo -e "${NC}"
@@ -262,127 +335,81 @@ if ! command -v yt-dlp &>/dev/null; then
   fi
 fi
 
-# Try yt-dlp extraction (works for TikTok, YouTube, IG, Pinterest videos)
-extracted_url=$(timeout 15 yt-dlp --no-warnings --get-url "$media_url" 2>/dev/null | head -n 1 || true)
-if [[ -n "$extracted_url" ]]; then
-  log "Video detected via yt-dlp"
-  media_url="$extracted_url"
-else
-  log "yt-dlp failed or not a video. Treating as direct media..."
-fi
+# --- CLEAN MEDIA DOWNLOAD ENGINE (FIXED) ---
 
-# Clean URL
-clean_url="${media_url%%\#*}"
-clean_url="${clean_url%%\?*}"
+log "Processing media URL..."
 
-file_extension="$(basename "$clean_url" | awk -F. '{print tolower($NF)}')"
-file_extension="$(echo "$file_extension" | tr '[:upper:]' '[:lower:]')"
+ORIGINAL_FILE="$MEDIA_DIR/original.mp4"
 
-# Detect type
-media_type="unknown"
-case "$file_extension" in
-  jpg|jpeg|png|gif|webp) media_type="image" ;;
-  mp4|webm|mov|mkv) media_type="video" ;;
-  *)
-    log "Unknown extension, forcing detection..."
+# Always use yt-dlp first for videos (TikTok, Pinterest, etc)
+if command -v yt-dlp &>/dev/null; then
+  log "Downloading using yt-dlp..."
 
-    # Try to detect via headers
-   content_type=$(curl -L -sI "$media_url" | grep -i "content-type" || true)
+  if yt-dlp -f "bestvideo+bestaudio/best" \
+    --merge-output-format mp4 \
+    -o "$ORIGINAL_FILE" \
+    "$media_url"; then
 
-    if echo "$content_type" | grep -qi "image"; then
-      media_type="image"
-      file_extension="jpg"
-    else
-      media_type="video"
-      file_extension="mp4"
-    fi
-    ;;
-esac
+    log "yt-dlp download successful"
 
-log "Media detected: $media_type ($file_extension)"
-  
-
-ORIGINAL_FILE="$MEDIA_DIR/original.$file_extension"
-log "Downloading media to: $ORIGINAL_FILE"
-
-download_file() {
-  local url="$1"
-  local output="$2"
-
-  if command -v curl &>/dev/null; then
-    log "Using curl for download..."
-    if ! curl -L --retry 3 --retry-delay 2 --fail -o "$output" "$url"; then
-      warn "curl download failed, attempting wget fallback..."
-      if command -v wget &>/dev/null; then
-        wget --tries=3 --retry-connrefused -O "$output" "$url"
-      else
-        err "Download failed with curl and wget not available."
-        return 1
-      fi
-    fi
   else
-    log "Using wget for download..."
-    wget --tries=3 --retry-connrefused -O "$output" "$url"
-  fi
-}
-
-if ! download_file "$media_url" "$ORIGINAL_FILE"; then
-  warn "Retrying download with yt-dlp fallback..."
-
-  if command -v yt-dlp &>/dev/null; then
-    if yt-dlp -o "$ORIGINAL_FILE" "$media_url"; then
-      log "yt-dlp fallback download successful"
-    else
-      err "Download failed completely."
-      exit 1
-    fi
-  else
-    err "Download failed and yt-dlp not available."
+    err "yt-dlp failed to download media"
     exit 1
   fi
-fi
 
-# Validate download
-if [[ ! -f "$ORIGINAL_FILE" ]]; then
-  err "Download failed: file does not exist."
+else
+  err "yt-dlp is required but not installed"
   exit 1
 fi
 
-if [[ ! -s "$ORIGINAL_FILE" ]]; then
-  err "Download failed: file is empty."
-  rm -f "$ORIGINAL_FILE" || true
-  exit 1
+# Detect file type properly
+file_extension="mp4"
+
+if file "$ORIGINAL_FILE" | grep -qi "image"; then
+  media_type="image"
+  file_extension="jpg"
+else
+  media_type="video"
 fi
 
-# --- Convert / save media ---
+log "Media detected: $media_type"
+
+#  VERY IMPORTANT FIX (prevents your ffmpeg error)
 if [[ "$media_type" == "video" ]]; then
-  FINAL_FILE="$MEDIA_DIR/custom_bg.webm"
-  log "Converting video to 1080p WebM (this can take time)..."
-  log "FFmpeg progress will show below:"
-
-  if ! ffmpeg -hide_banner -y -stats -loglevel warning -i "$ORIGINAL_FILE" \
-    -vf "scale=-2:1080" -c:v libvpx-vp9 -crf 30 -b:v 0 -an \
-    "$FINAL_FILE"; then
-    err "Video conversion failed."
-    rm -f "$FINAL_FILE" "$ORIGINAL_FILE" || true
+  if ! file "$ORIGINAL_FILE" | grep -q "MP4"; then
+    err "Downloaded file is not a valid video (TikTok blocked curl before)"
     exit 1
   fi
+fi
 
-  if [[ -f "$FINAL_FILE" && -s "$FINAL_FILE" ]]; then
-    log "Video conversion successful: $FINAL_FILE"
-  else
-    err "Video conversion produced invalid output."
-    rm -f "$FINAL_FILE" "$ORIGINAL_FILE" || true
-    exit 1
-  fi
+# --- FINAL MEDIA TYPE HANDLING ---
 
-  rm -f "$ORIGINAL_FILE" || true
-  saved_filename="custom_bg.webm"
-else
-  FINAL_FILE="$MEDIA_DIR/custom_bg.$file_extension"
-  log "Saving image as: $FINAL_FILE"
+if file "$ORIGINAL_FILE" | grep -qi "image"; then
+  media_type="image"
+  FINAL_FILE="$MEDIA_DIR/custom_bg.jpg"
+
+  log "Processing image..."
   mv "$ORIGINAL_FILE" "$FINAL_FILE"
-  saved_filename="custom_bg.$file_extension"
+
+  saved_filename="custom_bg.jpg"
+
+else
+  media_type="video"
+  FINAL_FILE="$MEDIA_DIR/custom_bg.webm"
+
+  log "Converting video to 1080p WebM..."
+
+  if ! ffmpeg -hide_banner -y -i "$ORIGINAL_FILE" \
+    -vf "scale=-2:1080" \
+    -c:v libvpx-vp9 -crf 30 -b:v 0 -an \
+    "$FINAL_FILE"; then
+
+    err "Video conversion failed."
+    exit 1
+  fi
+
+  rm -f "$ORIGINAL_FILE"
+  saved_filename="custom_bg.webm"
 fi
 
 # --- Generate CSS for background ---
