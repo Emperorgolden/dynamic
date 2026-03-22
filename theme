@@ -8,23 +8,22 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 LOG_FILE="/var/log/ghe-theme-deployer.log"
+# --- Logging helpers ---
 
---- Logging helpers ---
-
-log()  { echo -e "${CYAN}[INFO]${NC}  $"; }
-warn() { echo -e "${YELLOW}[WARN]${NC}  $"; }
+log()  { echo -e "${CYAN}[INFO]${NC}  $*"; }
+warn() { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 err()  { echo -e "${RED}[ERROR]${NC} $*"; }
 
-Log everything to console + file
+# Log everything to console + file
 
 mkdir -p "$(dirname "$LOG_FILE")" || true
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-Helpful error if anything fails
+# Helpful error if anything fails
 
 trap 'err "Script failed at line $LINENO. Check log: $LOG_FILE"' ERR
 
---- Animated Intro Functions ---
+# --- Animated Intro Functions ---
 
 type_text() {
 local text="$1"
@@ -55,7 +54,7 @@ sleep 0.3
 
 clear
 
---- ASCII DISPLAY ---
+# --- ASCII DISPLAY ---
 
 echo -e "${GREEN}"
 
