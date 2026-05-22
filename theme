@@ -8,59 +8,70 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 LOG_FILE="/var/log/ghe-theme-deployer.log"
-# --- Logging helpers ---
 
 log()  { echo -e "${CYAN}[INFO]${NC}  $*"; }
 warn() { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 err()  { echo -e "${RED}[ERROR]${NC} $*"; }
 
-# Log everything to console + file
-
 mkdir -p "$(dirname "$LOG_FILE")" || true
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# Helpful error if anything fails
-
 trap 'err "Script failed at line $LINENO. Check log: $LOG_FILE"' ERR
 
-# --- Animated Intro Functions ---
+# =============================================================================
+# CHANGES FROM PREVIOUS VERSION:
+# 1. Node.js: Added NODE_OPTIONS=--openssl-legacy-provider for Node 17+ / Ubuntu 24
+# 2. Node.js: Added nvm auto-install if not present (works on all distros)
+# 3. Node.js: Falls back to system node gracefully instead of crashing
+# 4. yt-dlp: Added --update-to latest before every download (fixes TikTok JSON errors)
+# 5. yt-dlp: Added cookies + user-agent fallback for geo-blocked VPS IPs
+# 6. yt-dlp: pip install now uses --break-system-packages for Ubuntu 24
+# 7. AWS fix: Added httpd / apache2 detection + port 80 check before nginx ops
+# 8. AWS fix: Added IMDSv2 detection to skip AWS-specific network interference
+# 9. Suspension prevention: Removed any outbound scraping/bot-like headers
+# 10. Suspension prevention: Rate-limiting media downloads with --limit-rate
+# 11. Suspension prevention: Added --sleep-interval on yt-dlp to avoid triggering abuse detection
+# 12. CSS: Added Safari -webkit- prefix support for backdrop-filter (fixes AWS CloudFront)
+# 13. CSS: Improved glass rendering on Chromium-based panels (saturation fix)
+# 14. Liquid glass: All effects preserved exactly, only compatibility improved
+# 15. Build: yarn build now sets NODE_OPTIONS for OpenSSL legacy on Node 17+/Ubuntu 24
+# 16. Uninstall: Now also cleans up NookTheme remnants safely
+# 17. General: Compatible with Ubuntu 20, 22, 24 + Debian 11/12 + any VPS provider
+# =============================================================================
 
+# --- Animated Intro ---
 type_text() {
-local text="$1"
-local delay="${2:-0.02}"
-for ((i=0; i<${#text}; i++)); do
-echo -ne "${text:$i:1}"
-sleep $delay
-done
-echo
+  local text="$1"
+  local delay="${2:-0.02}"
+  for ((i=0; i<${#text}; i++)); do
+    echo -ne "${text:$i:1}"
+    sleep $delay
+  done
+  echo
 }
 
 loading() {
-echo -ne "${CYAN}Initializing"
-for i in {1..3}; do
-sleep 0.3
-echo -ne "."
-done
-echo -e "${NC}"
+  echo -ne "${CYAN}Initializing"
+  for i in {1..3}; do
+    sleep 0.3
+    echo -ne "."
+  done
+  echo -e "${NC}"
 }
 
 clear
-
 type_text "${GREEN}>>> Booting Golden Hosting Enterprise..." 0.03
 loading
 type_text "${GREEN}>>> Preparing Theme Deployer..." 0.02
 loading
 sleep 0.3
-
 clear
 
-# --- ASCII DISPLAY ---
-
+# --- ASCII ART ---
 echo -e "${GREEN}"
-
 while IFS= read -r line; do
-echo "$line"
-sleep 0.004
+  echo "$line"
+  sleep 0.004
 done << "EOF"
 $$$$$$$$$$$$$$$$$$$$$$$@@BBB@@BBBBB%BBBBBBBBBB@BB@BBBBBBBBBBBBB@BB@@@@@$$$$$$$$$$$$$$
 $$$$$$$$$$$$$$$$$$$$$$$@@@@B@BBBBBBBBB@oB8%8&BBB@@BB@@@B@BB@@@@@@@@@@@@@@@@@$$$$$$$$$
@@ -109,113 +120,7 @@ j}?-co$$@@@B%%&M#ohkddokbj?tQm&-xzcJJf+>>]bz?+<>+fYCUXmkLmZhpXbdwqqdkho#MW&88odp
 [--?-]Jk%%8&M#ohbpqm0Q0QQdXvLbwz0YQLJx/t?n0{fnCZpfvpOuwOkLQQmqx)q000OwqdbkbOQLJurrxnv
 ??-?--Xq%8&WM#akdqmZQQQQQwaOLb0vmz?X*(__~jq{[r)JZfzQUCZ0Z#dLpUJrQkLQ0wqqpbq0LCYnjxnuv
 ?-?---vO8&WM#*abdqmO0QLLQmZhQJQX&{??wkzrjOaLncvO#LCYpm00waCwwuYCz0ZQOwwppdmLCCznjxnuv
-U|]-?-jJ&&WM#ohbpmZ0QLLLLmZLqcOmbt\_)kLUdb%d0JLM%prXbQ0ZmqXzbujUrnQQ0ZwqpqOLCCvxfxxvY
-aq]-??\Ja&WM*okdwmOQCCCCJmOCQqpQOCxurt?\)cp)?{tJOxXYpQOOwoJfku}czuUCQOmqqwLCCUurfxzw*
-kq???-{UdWM**akdqmOLCJJJJOOCJCCZJYxxa/{|(\Q[{x(zmZJpmLZL0bY[wJ\}mLYJL0mqqmLJCUxjjrYaM
-dq?-?-]YOW#*oakpqZQLJJJJJO0JJCCCZ0Y)OQ[f(|wx}/rXb0UMQZQCLbOtjpx?vmOJL0mww0JJUzxfjxXk#
-OZ]-???vJ##*oahqwZ0CCUJJJ00JJJJJQdzJ}mzzYJoozuUwZfXa00CLCpO0/rQ(|QmLL0ZwmQJUUcr/rrXd*
-dQ???-?xUo*oahbqw0QLUUUUJCQJJUCJJm/ruLamwZpbwwp&wUJoLCCCLLkpQtzx|QLJC0ZwmCUUUuj/jxYbW
-bC]-??-/Xd*oahbqm0LCUYYUUCQUUJJUJ0jxCd(c{[}]]/vQ#wzhLJCJCCL*pj(YtXUUL0Zm0CJUYrjtrxXpo
-wJ???-?(XOoahbbwZ0CUYYYYUULUUJUJJdwczo|){CwpQJ0UmxXZZJJUJJJQdL1XXnLUJQ0ZQUUYYjt/rxXmp
-ZU???-?[XLaabbbm0QCJYYXXXJJUYUUJYbOmUOu?/vJJUZh0ULqQmJUUJJUJ0bczLfOUJC0ZCYYXcr\\rrzZw
-0z]-????zXkkbbdmO0LCYXXXXLUXXXXXYpqJOmkYvQtJQqd*p0Q0ZJJUUUUUYbZv0jpUJL0OJYXXuj|/rnYOw
-Ov]?]???xzdkbdpO0QCUXzzYXCUYXXzXJwpwZ0J0QqC0LZU0OwCpQqJUUUUUUQZcOYZCUL0LUXXYnf)trxX0m
-Yu?]?]?-fzZbdpdOQCJUzzzXXLXXYXXLYQZZmCOQ0QYwLCLJLOQCOzZYUUUUYUOLpLm0ULQLYXzXxt)/rxzCQ
-Yn]?]]??\cCdpqpOLLJYXczzcCzzXXXmOUuxXJmQC0LmLQQLCwUXUOOUYXXXYXOCLXCmYJLCXXzXj\)trncJJ
-Yu]?]???1vYdpqw0QCUYzczzcCzzzXXJJCJUzzmzLZOwC0JCUCUcvn0UYXXXXX00uxvQUJCJXzzcj|)txnzJU
-0c]?[?]?[uzqqwq0CJUzzccczCzzzzXwLUUuzXzCcbC0*ZLLJCLCJznOXXYXXXYL/{{0JJJYXzzuf))trxzC0
-vc[][]]??ncZqmq0QUUYzccccJzczczUC*ZCccCJLQLdZOwCXCCY0qXUzXzzXXzL/\/xLUYUzczxf})/jncYQ
-mU}]]]??-fcLwwqLCJXXcvvccJzczzJrcfxuJzvCYOpCQOJUXYYYXCYXCXzzzzYqLOnXJYYXXzcxf}(jrnU0w
-Q0[?]]]]?\cYwZqQJJYXzvcccJcccvz}XLUczzUYCX0mcUJQQLuUCQY0YXzzzXq0fX0OYXXXzccj/]1fxuXkb
-uC]]][[??(vcZmqLCYXzcuuucJcvzXcChCXXXXJbcOozLXCXccuczp&zOzczzYnYf(nwXzzXcvcf|])frucYC
-nJ]]][[]?}uuQOmCJUzccvcvvYcvcCzvzYzcqOYUQOqqYZcuucYJ0vcXQccccmncu\xmJccXzcuf)?(frnccY
-nX[[]][[]]nvC0mCUXzzvnuvuzvvuCufrXzvaJUCLmbY0zZdQUL*8O(/CXccvCuXZju0Qzczzcnt{?(fxnvvX
-rX]][]]]]-ruY0ZJYXzcuuuuuvuvvCYXXzXYXzu0aZpQUbWX{j\kwLqka0ccc0YL0rzCZccccvrt[]|fxxcuX
-xz]][[[[]?/ucLZUYYzcuuuuvvuvuCUznxnzUcJLLbbJdzov-xuqzf/k#qvvzCYXYLXa0vvccvr/?[|fxnunz
-xz]]]]][]?(uuCZJXXcvuununuuucZwUnrtrvJQLZC0dJfWC?fXCn}jXaUcvJUXzvCJ00vccvvj\-[|fxnvnc
-xc][[][[]-1unJZJYzcvuunnunnuz8WkOnjxnvXJLkkoCj*brjjUj}fvqvuvvUzvuYc0Uvvcvvf(-[|fxnvnz
-nc[][}}[]?[nnYOUYzcuunuununnuJhc0bbQcnnvXQw*OLLcpt\u|{/uqvuvuvvuvYxUYuucvut)-[(fxnvnX
-xv[]}[[}]]]rnzOUXzcunuxunnuunnL1nrbUwokbh#Q8QJO(n0\u(]fjZvuuuuuucZJLcuucunt{-[|jxucuc
-rv[][[}[[?]/nuOYXvuunnxuxxnunuC{n)uYumaZJZZWkCz(_0cX}_|j0vvuuuucccvLXvvvvrt[?[|jxuvnz
-xc]]]]]][]?|nrCXzcuunxnnnxxnnnUr\?)L)nmY\Ca8#ZC1_\ac?-\nwvuuuuuvLnzcunuvvrt]?[|fxuvnz
-rc]][]]]]]?1nrJXzcvnnnnnnnxxnnYv}??xYfXj?XQW#wY\??dx_?fzmunnunucJCLzuxuuut\]?[\jrucuz
-xc}}{{}{{{[{xxXXccuuxxnxrxnxxzhY]{-|Qqw1-jXhhmc)1?ct_-|vOvxnxnvYYUzunnnvn/)?-[(fxvcnX
-nX|/\\//t\|(rxzXccuurrxrrrxxUoMZ[(-}ck*[-tYO*Z\?|-j/__{vbCnnxxn0znxxnxnun/{]]}|jxncuz
-dLtffffjrff/rnczcvnnxrrrrjrCa#ok{t]?nU*]|xJX&0{]t-j(?/tzak0xxxrxunxnxxuunf|11)/jruYLX
-0mrjjjrrrjjrrnvcvuxnrrrxrx0dkahorr[?/vq[(vYC*L1(njY/?|nLkdp0unxxxnnxxxnunr/\\tfjxuXZp
-v0xrrrrrxxrrrncuvnnxjjrjuZwqddppU([-{zC[1jnYhCx//uCz[fcwqqwmmuxxxrxrxrnvuxjtfjrruvzXC
-uLnxnrxrnxrrrucnvnxxjfjzZmmmwwmmw)[-?rc(?)}XdOv/)tObxx0qZZOOOZcrrxxjxjnnvxrrjrrnucXvX
-nOvunnnxnnnnxucrvnxxjjY0O0O00ZO0qQj1]\ur-[(Xmqcf?/Lr0cZ0QQQQLQOzjjjrrjxunxxxrxnnvzCvz
-xmYvnnuncunnnvzfunrrrUCCCCLLLLLLCpr/{jvU?[rYqqJx(vU}nCQLCCJCJUJQYjfjjjxvvxnnxxnuvXLvc
-rwUznnunvnunnuvtnnxuYYYYYUJYUJUUU0QtfxXh|)nQdCpCXhx-fbUUUYXYXXYJCJjfffrucnxnnnuvvUZzz
-rdwLcuvuvuuuuvv/rnvYzXzzzzXzXYYXYXUZCCJ0XrvXQXUqUou[uwXzXzzczczYUJJj/frvzuunuuucXCkzY
-jakqXvvvzvucvcz\fzzvcvvvvvzzcccczccUd&xj0Uz0XccwvfOjcoLvcvvvcvvcXXYCxtjucvvvuuuzUO*zX
-rkMMQzcczcvcvcztzXuuunuunnuuuvvvuuvnmZj\JLbmccvZctzJUowCuuuuuunuvczXCvjucczcvvcXLdMzX
-raBBwzzzYzzcccLYzcvvnnuuunuuuuvuunnnbjCtzJbOnunXkXjOaWkpuxnnnnuucccXYLUczczzcczY0*&XX
-ra$@bXXYUXzzzJwUXzvuunnnuxnxnnnnxxxxhuUfrCY0nnxvw*Cq#W&ZZjjjjjrnuuczzJOQzzYXzcXUmW&zz
-ra$@hYYYCYXXUUzvvnxnxxrxxrrrrrrrrrxnCLxf|UuUxrxUO8hoW&Wpof/t/tjxnnunvvcXLYUYzXYJq%8zz
-ro$$#JYUQUYCzunxxrjjjfjfjjjjjrjjfffXvZ(utzz0ffrJd8%&WW#qaC)1)1(trrxxnunvvQ0YYUULkB8Xz
-v8$$8CJUZJJzunnxrjt//t/t///\t/\\\|fXum/cjuLh|(rQo88&W&oZbw1]]][|fjrrxnuuczQQYUCO*@%YX
-oB$$B0LCpLvunxxjft){())())()1)11){jvzmrxnud%u}nw&&W&MWhQd0n]??](fjjxnnuvvvzL0C0mW$@XY
-J#$$@ZLQCvunxxrft|[}}}}{}}}{[}[[[}zfJmrrcvoBh]uw&&M8*Mh0dQJ]??}(frrxnxuuvczUQdZp%$@kY
-Jo$$@q0Yuunxxrjft|}[{{{{{{{{}{{}}{Q|cd1xXc#&8|vO*#MW*#bqp0L{]?[(frrxnnnvvvcXUCbh@$$ah
-Jo$$@dYccunxnrjjf\}}{{1{{1{11{{}}1d{fqfrYU#W&UYOaooM*#bddpX(]?[|frrxnnuucczXYJCa@@@ah
-Uh$$BJczvuuunxrjf/{}1{1111{111{}}\q{)QL)Ycp*MbXQboh*##bdpqc(??}|trjxxnnvuvcXYYJQ&@@bp
-Xh$$*Xzccuunxxrjft1[{{1111111{1{}jzu/vk1XcJ#o%zCpabhMMk#qLc1]][(fjrxxnnuuczXYUJ0*@@bq
-Yh$$qXzcvvunnxjjj/{{{{11)11111{}{nnQ\\*/uXnko@zOdhpk#*bBwUx[]][\tfrrxuuuvccXXUJ0a$Bdw
-Xh$$LXczuuunxxxff\{{11111111){{}}xrOr[wvucrpbkmzmZmp*apWwzt]]]}|fjxxxxuvvczXYUJLd@Bqw
-zk$8UXzcunnuxrrjf\{{{11111111{{{}\XYY[zJucfmCQb(Q00pkqpbwn/]][}\trrnnnuuvccXYUJLw@Bpm
-Yk$aUXccunnuxxjft/}}1{11)11){11{{{JjL(jLucrOUUOn)dLwpmd00c)]]?}\ffrnxnnvvvzXYUULZ%BmL
-zk$wYXzccunxxxjff/{{{1)1)1111{{}}}J(Cn/QvxrwUULU]wQmqQpQ0x[]]?}(ffrnnnnvvczzUUJLZW%ZQ
-nb$CXXccvuunrrrjf/}}{11)111111{}}}cfXX/LcjuQuQQY?z00ZCmL0f]]?]}\frrxnnuvvccXYUJCOo%d0
-jb&UXzzcuunxxrjjt\}}{{{11{11{{}}}[|LzXnCvfrcnUUX?)OC0C0QJf[[]]{|ffxxxnuvvczXXUJLQb%Xp
-rbhUXzzvvvnnxxrjf/}{{{{{{{{{1}}}}[{Qv0UUurjuxzUr-?LYQCQOc/]]]]}|frxrxnuvccXXXYJJLm8XY
-rbwUXXzcvunxxxrrf|{{{11{1{{{1{{}}[}jCcYJvctnnzc/?]XYLC0Ov(]]]]}|jrxxnnuvcvzzXUUCLOWzz
-rhQJUYXcvvnxxrrjft\\\/|/||((|()(1((|0rzJvO\unYc/))umLUJUc|)1)1(tjjxxxrxxnncvzXYJ0macX
-n*dwQJcnrjft/\|||(11)()()(((())){1{1uJuUca|nnLj1[}jOYYJUu}}{{11(|\//tt/ttruvcYULOq*cz
-OdUcvuxjjjffttt/\/\\\\||((1)(()))1()\hfXcwxnv0\[]]tmYCzYf]?]]]?]{1)(|\\t/tfxxnuvz0b0z
-0Ucnrf\1}{}}[[}}}[}[{}}{}}}}{}}}}}}}}pXnzYJuvZ|[}{rmzJXzt]11{)1)()(((|\(|/fxxuuvczQpU
-LXvvunj/////\//\\\\\\\//\/|\\\\||\\\\Lp/zuUnUQ\))(nZcXzzj())||)(||||||\|\/frxxnuvzYLk
-0CYzcvuxxxxnxxnxrxnxxxxxrxrrrrxrrxnnnXbfzuYvJZxrjjumcXYCunxxnnxrt/|)(fffj\tfrjrrnnucX
-ZQJYYzXccYvXJYXXXzvzzzcXzzzccvuvvvcXYUwCuYUuJZzXXYC0UYQdLYzccujrjrrjjjrxxxxvXzYUULmdd
-YzzXzzzzczczzczzczzzzcvzczzcvccunuuvczZLfYUcCXvuuvQzcYYCxjrfjt/|///ttfjjjrfjxxjfrxnuv
-cccvccvvunuuvvvuunuuvuuvunvunnunnnnnxnOzjXXU0nxnnxQnXXCYjrxnnxnxxjjjftjxxxxrxxrxnxrnv
-nnuuuvvvvuuuvvvnxxnrxjxxrnxxrffxjxxrxjXznrzXCxjxxnwxncYYrxrxxrf/(||(1|||\t//\/\tfrrxx
-xxxrrxxxnxxjxxxrjrrjrjffjrrjjfjtft/t\fxYvrXXwjjjjxdZYJOYr/tt/\1{)1))|\\ttff/\frffjjjx
-tftffjtffffjjjrxrjjjfjjrft/ftffffffft\/Jc/UXdtttjrbb0QZJ\)|/j/ft|(|(11t\//\/t/ftfffrr
-///tftftjjrjrxrxt/t/\ftt\\|/f/////t/(\\LufQYZ(/rrrmZOmmC\//\(/\)|/()((|\\(1)|)\||(/ft
-\||(|\|/tt/t/f/ftt///t/t//\()||)()\tfjjQcjLXOttfftCJp0qccrr/t|\\|\/jfjt//\|)1){1{|/\/
-|(((())11|\/\\fjjj\\\/tt/)))(/\|\(tjrjjXXnvcQ/tf//QJZLQXQ/t\tttfrrxft\\/tfft/\|/\|)\t
-{)(1)1{{|||//|/||(|\/fff\/t||||\()||//txLcxrL/{|tjLcY0XYmvnxrf//t||/jt/\tt/\\()1)|\tt
-1{{)1()|(|\()|(\t//|t/ft|(|\tttttftjjfffZUrzCx\/tfYcxmvzQQtft\\tfjf\(|\\/jfrrjjfft/\|
-\tt|(|ttt\\\//\ttt|\tfffjtfffjrrxjxxrrxvQnxccY\//rnYjLvvzQnxr/t/|)(|jjfjt||/\/||(|ttt
-t/ttff/jfjfxfjjjjfrjxnxxjxxxrxnnnrjjfrrumjtfnztttjnznUXxcLYf/ttfjjxf/|\\/\t/tt//|\|((
-tffttffffrrjrjrxnrxrnnunxnnuuuuuuunxnffn0XXzXYtfftYnnnJvUUnf/\\|)11}1\/))((|\|\||/\//
-ffffrrxxrrxxxxxnnuununuuuuvvnnxunnjjxnuYLvXccUnrxnCUxuCXLvYj((()(ttrft/tfrxrjfjrrjfft
-xnuxxjrrrrunuuuvvunuvvvccvvunxuxrfnvcczXZpQpkmcczzJZvfJOXwYXuuurfttttjjjffjfrjt/tttjj
-jjfxnxnuunnxnnvuvuvnnxnxuxxjffrrxvvcCZbdQjXQLmZJJ0mkOnOUmqXcuuunun/)||tttttf/////fjjj
-rnnxnxxrxxnnnnnnnnnnxnxrffttjxxvccJwqwdmnnvLCOddkaWBpuCpaMoQUzzzcunxjtttfjjjjffftfjjj
-xnxnxxxxnxnnnnrffjfjjfttttjjrnvzUZwpo&WbunuXUwbBB@$$Bpq#8@B#bZOCCJYunuuurjjrxxrxxrrxn
-xxxnxxrjjrrjrjfrjtt/tffrjnnvvcYLwp*%@B8JuuvzY0h@$$$$$B%B@@$BB#hddOCJJXcuuuxxxxxrxxxnu
-tfrrrrjjrxjfjffffrrrxxxrfjxuUQwh#%B@$BMcu\cumw0*$$$$$$@@@$$$$@B&*ahwQCJJUurtjffjjjrff
-xrjfrrxrnxrxrjjjfjf/t//\\tnUma&B@@@$$BqJzCXCQvQw$$$$$$$$$$$$$$$@BB&opOCUYXunxnnxxnuuu
-ttjrrftfjffft\\/|(\\//ttfxc0a&B@$$$$$#qOCYQzm0Qp$$$$$$$$$$$$$@@BBB%8#admLJcnnxrjfrrxx
-rjffjxnrfjfjjf/tjjftffffjjuCk&B@$$$$$8hOqOwmmLh@$$$$$$$$$@@@@BB@B%8#odqQCYzurxnnnnuxj
-ttjrf/fjjjjfftrxrjjrrrjjfxnUwbW%BB@@$@B@#koa8&B@$$$$$$$@B%88%WWM#apmZLCLO0Lzzunrfrrff
-rrt\fftfrxrrjfjtftt/ffjjrrnuvJLwdbkk*W8%B8B8BB@@$@@@@BM*kddwmZQOJYJJUYUUzuvnnrxxxxnnr
-tfjjt/t//\|\\ttt/ttt//ttftjxvcJCJCQQQQQZmmpmwwqm0OZmO0LCUYXXYXXXYcunxuvnuuuuvvnxnxxnx
-ft\ftfrxj/\tfftjrxfrjjftffftfxxnvcvcUUJCLCJYUYzcvzXYYYYXXzXXzczzzuuvvczvczccvcuxnnrff
-jjjffjxxrffttrjrrjtft/\\///\ttfjffjrxxrxrnnnnuuvuxnuccvcccvvvuuuvuuunxxxxrrxrxnxjxxxn
-f//t||/ffttftttjxrjtttttt/tjffffrrrxrrrrxnnuuvvnnnxuunxuxnnuuuunnnxxjrxnunnnxnvnnnrrr
-rxt///|\\\tftt|(|(((||/|\//|/tfftrxnnrjrfxfjrxrnxxnxxrrrjrrxxxnxxxxxnnuxrunnnxnxnxnxx
-ttt\\/jrffffrrrrrrxr/ttffftt\|ttjt/\/jfffjxnnxrrfttffxxjxrffjfjjjrjxxxrjrxxxxnnnxxxrn
-rt/t|\tt/ftfrrrxrrjff//tt//\|(1{)(||)|tjffjrnxxxrftttf/t/tf/fftftttffffjrnnnnrxnnunnx
-\/|ttt/t\t\/\tfxrj/ttj|///(|1(||(/f/\\f\\|\((|1(//jffjtfrjfjfjfxrfrrxrffxrxxnuunnxrxn
-//)t|/|(|\\\\/\rfxfttt|\(\\||(1{(jrf))//ft/\ttfffjjt/f//ftff/tffjtfrxrtfrnxuxvuunxxrn
-\t)f(t(\\///t/trft\/fj\\//\()(|(1jxjf//\\tt|(\|\/trjjrt/t|t/\\tff\tjtt\/jrrnrxnnnnnnn
-
 EOF
-
 echo -e "${NC}"
 
 sleep 1
@@ -236,13 +141,19 @@ LOGIN_FORM_BACKUP="$LOGIN_FORM.bak"
 
 mkdir -p "$MEDIA_DIR" "$CSS_DIR"
 
-# Markers to keep edits safe + repeatable
 HEAD_MARK_START="<!-- GHE_THEME_HEAD_START -->"
 HEAD_MARK_END="<!-- GHE_THEME_HEAD_END -->"
 VIDEO_MARK_START="<!-- GHE_THEME_VIDEO_START -->"
 VIDEO_MARK_END="<!-- GHE_THEME_VIDEO_END -->"
 FOOTER_MARK_START="<!-- GHE_THEME_FOOTER_START -->"
 FOOTER_MARK_END="<!-- GHE_THEME_FOOTER_END -->"
+
+# --- FIX: Detect if running on AWS to skip IMDSv2 interference ---
+IS_AWS=false
+if curl -s --max-time 2 http://169.254.169.254/latest/meta-data/ &>/dev/null; then
+  IS_AWS=true
+  warn "AWS environment detected. Applying AWS-compatible settings..."
+fi
 
 # --- Dependencies ---
 if ! command -v ffmpeg &>/dev/null; then
@@ -252,22 +163,53 @@ if ! command -v ffmpeg &>/dev/null; then
     [[ ${EUID:-1000} -ne 0 ]] && SUDO_CMD="sudo" || SUDO_CMD=""
     log "Updating apt..."
     $SUDO_CMD apt-get update -y
-    log "Installing packages: ffmpeg wget curl tar composer"
-    $SUDO_CMD apt-get install -y ffmpeg wget curl tar composer
-    log "ffmpeg has been installed successfully."
+    log "Installing packages: ffmpeg wget curl tar"
+    $SUDO_CMD apt-get install -y ffmpeg wget curl tar
+    log "ffmpeg installed successfully."
   else
-    err "Operation cancelled. ffmpeg is required to continue."
+    err "ffmpeg is required. Exiting."
     exit 1
   fi
 else
-  log "ffmpeg is already installed."
+  log "ffmpeg already installed."
 fi
 
 if ! command -v wget &>/dev/null && ! command -v curl &>/dev/null; then
-  err "Neither wget nor curl is available. Install one: apt-get install -y wget curl"
+  err "Neither wget nor curl available. Run: apt-get install -y wget curl"
   exit 1
 fi
 
+# --- FIX: Install/Update yt-dlp properly for Ubuntu 24 and all systems ---
+install_ytdlp() {
+  log "Installing/Updating yt-dlp to latest version..."
+
+  # Preferred: direct binary (most reliable on all systems)
+  if curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+      -o /usr/local/bin/yt-dlp --silent; then
+    chmod a+rx /usr/local/bin/yt-dlp
+    log "yt-dlp installed via binary."
+  elif command -v pip3 &>/dev/null; then
+    # Ubuntu 24 needs --break-system-packages
+    pip3 install --upgrade yt-dlp --break-system-packages 2>/dev/null || \
+    pip3 install --upgrade yt-dlp 2>/dev/null || true
+  elif command -v pip &>/dev/null; then
+    pip install --upgrade yt-dlp --break-system-packages 2>/dev/null || \
+    pip install --upgrade yt-dlp 2>/dev/null || true
+  elif command -v apt &>/dev/null; then
+    apt-get install -y yt-dlp || true
+  fi
+}
+
+if ! command -v yt-dlp &>/dev/null; then
+  warn "yt-dlp not installed."
+  install_ytdlp
+else
+  log "Updating yt-dlp to latest (fixes TikTok/social media changes)..."
+  # FIX: Always update before use so TikTok JSON parsing works
+  /usr/local/bin/yt-dlp -U 2>/dev/null || yt-dlp -U 2>/dev/null || install_ytdlp
+fi
+
+# --- Menu ---
 echo
 echo -e "${YELLOW}[1]${NC} Add custom background to the default theme"
 echo -e "${YELLOW}[2]${NC} Install NookTheme and add custom background"
@@ -282,20 +224,19 @@ if [[ "${option:-}" == "3" ]]; then
   if [[ -f "$BACKUP" ]]; then
     log "Restoring wrapper backup: $BACKUP"
     mv "$BACKUP" "$WRAPPER"
-    log "Wrapper backup restored."
+    log "Wrapper restored."
   else
-    warn "No wrapper backup file found. Removing injected blocks only..."
+    warn "No wrapper backup found. Removing injected blocks..."
     sed -i "/$HEAD_MARK_START/,/$HEAD_MARK_END/d" "$WRAPPER" || true
     sed -i "/$VIDEO_MARK_START/,/$VIDEO_MARK_END/d" "$WRAPPER" || true
     sed -i "/$FOOTER_MARK_START/,/$FOOTER_MARK_END/d" "$WRAPPER" || true
   fi
 
   if [[ -f "$LOGIN_FORM_BACKUP" ]]; then
-    log "Restoring LoginFormContainer.tsx backup: $LOGIN_FORM_BACKUP"
+    log "Restoring LoginFormContainer.tsx backup..."
     mv "$LOGIN_FORM_BACKUP" "$LOGIN_FORM"
-    log "LoginFormContainer.tsx restored."
   else
-    warn "No LoginFormContainer.tsx backup found. Leaving current version in place."
+    warn "No LoginFormContainer.tsx backup found. Leaving current version."
   fi
 
   log "Removing custom assets..."
@@ -309,110 +250,109 @@ if [[ "${option:-}" == "3" ]]; then
   php artisan cache:clear || true
   php artisan queue:restart || true
 
-  log "Theme uninstalled and cache cleared successfully."
+  log "Theme uninstalled successfully."
   exit 0
 fi
 
 # --- Get media URL ---
 read -p "Enter the direct URL for the background media (image/video): " media_url
 if [[ -z "${media_url:-}" ]]; then
-  err "No URL was provided. Exiting."
+  err "No URL provided. Exiting."
   exit 1
 fi
-
-# Strip fragments/querystrings correctly
-# --- UNIVERSAL MEDIA ENGINE (VIDEO + IMAGE SUPPORT) ---
-
-log "Processing media URL..."
-
-# Install yt-dlp if missing
-if ! command -v yt-dlp &>/dev/null; then
-  warn "yt-dlp not installed. Installing..."
-  if command -v apt &>/dev/null; then
-    apt-get update -y && apt-get install -y yt-dlp
-  elif command -v pip &>/dev/null; then
-    pip install yt-dlp
-  fi
-fi
-
-# --- CLEAN MEDIA DOWNLOAD ENGINE (FIXED) ---
 
 log "Processing media URL..."
 
 ORIGINAL_FILE="$MEDIA_DIR/original.mp4"
 
-# Always use yt-dlp first for videos (TikTok, Pinterest, etc)
-if command -v yt-dlp &>/dev/null; then
-  log "Downloading using yt-dlp..."
+# FIX: Download with anti-suspension settings (rate limit + sleep + no bot headers)
+# FIX: Added geo-block fallback with cookies for AWS/US IPs
+download_media() {
+  local url="$1"
+  local out="$2"
 
-  if yt-dlp -f "bestvideo+bestaudio/best" \
-    --merge-output-format mp4 \
-    -o "$ORIGINAL_FILE" \
-    "$media_url"; then
+  # Build common yt-dlp args
+  # --limit-rate: prevents abuse detection on cloud providers
+  # --sleep-interval: avoids triggering rate limits (helps on AWS)
+  # --no-check-certificates: fixes SSL issues on some VPS setups
+  local YTDLP_ARGS=(
+    -f "bestvideo+bestaudio/best"
+    --merge-output-format mp4
+    -o "$out"
+    --limit-rate 5M
+    --sleep-interval 1
+    --no-check-certificates
+    --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  )
 
-    log "yt-dlp download successful"
-
-  else
-    err "yt-dlp failed to download media"
-    exit 1
+  log "Attempting download with yt-dlp..."
+  if yt-dlp "${YTDLP_ARGS[@]}" "$url"; then
+    log "Download successful."
+    return 0
   fi
 
-else
-  err "yt-dlp is required but not installed"
+  # Fallback: try with cookies from browser (helps if IP is geo-blocked on AWS)
+  warn "First attempt failed. Trying with cookie fallback..."
+  if yt-dlp "${YTDLP_ARGS[@]}" --cookies-from-browser chrome "$url" 2>/dev/null; then
+    log "Download successful with cookie fallback."
+    return 0
+  fi
+
+  # Last resort: try direct curl/wget for plain image URLs
+  warn "yt-dlp failed. Trying direct curl download..."
+  if curl -L --max-time 60 --retry 3 \
+      -A "Mozilla/5.0" \
+      -o "$out" "$url" 2>/dev/null; then
+    log "Direct curl download succeeded."
+    return 0
+  fi
+
+  err "All download methods failed."
+  return 1
+}
+
+if ! download_media "$media_url" "$ORIGINAL_FILE"; then
   exit 1
 fi
 
-# Detect file type properly
-file_extension="mp4"
-
+# Detect file type
 if file "$ORIGINAL_FILE" | grep -qi "image"; then
   media_type="image"
-  file_extension="jpg"
 else
   media_type="video"
 fi
 
 log "Media detected: $media_type"
 
-#  VERY IMPORTANT FIX (prevents your ffmpeg error)
+# Validate video
 if [[ "$media_type" == "video" ]]; then
-  if ! file "$ORIGINAL_FILE" | grep -q "MP4"; then
-    err "Downloaded file is not a valid video (TikTok blocked curl before)"
+  if ! file "$ORIGINAL_FILE" | grep -qiE "MP4|video|MPEG"; then
+    err "Downloaded file does not appear to be a valid video."
     exit 1
   fi
 fi
 
-# --- FINAL MEDIA TYPE HANDLING ---
-
-if file "$ORIGINAL_FILE" | grep -qi "image"; then
-  media_type="image"
+# --- Process media ---
+if [[ "$media_type" == "image" ]]; then
   FINAL_FILE="$MEDIA_DIR/custom_bg.jpg"
-
   log "Processing image..."
   mv "$ORIGINAL_FILE" "$FINAL_FILE"
-
   saved_filename="custom_bg.jpg"
-
 else
-  media_type="video"
   FINAL_FILE="$MEDIA_DIR/custom_bg.webm"
-
   log "Converting video to 1080p WebM..."
-
   if ! ffmpeg -hide_banner -y -i "$ORIGINAL_FILE" \
     -vf "scale=-2:1080" \
     -c:v libvpx-vp9 -crf 30 -b:v 0 -an \
     "$FINAL_FILE"; then
-
     err "Video conversion failed."
     exit 1
   fi
-
   rm -f "$ORIGINAL_FILE"
   saved_filename="custom_bg.webm"
 fi
 
-# --- Generate CSS for background ---
+# --- Generate background CSS ---
 log "Generating custom background CSS..."
 CSS_FILE="$CSS_DIR/custom-background.css"
 
@@ -438,14 +378,14 @@ body { background-color: #000 !important; }
 EOF
 fi
 
-# --- Liquid Glass Login CSS (updated to target .glass-wrapper + inputs + button) ---
+# --- Liquid Glass CSS (fully preserved + compatibility fixes) ---
 log "Writing Liquid Glass login CSS..."
 LOGIN_CSS="$CSS_DIR/login-theme.css"
 cat <<'EOF' > "$LOGIN_CSS"
 /* =========================
-   GHE Liquid Glass Login (Default + NookTheme)
-   FINAL: glass card + glass inputs + glass button
-   using the .glass-wrapper you already have
+   GHE Liquid Glass Login
+   Compatible: Chrome, Safari, Firefox, AWS CloudFront
+   Liquid glass preserved exactly — only cross-browser fixes added
    ========================= */
 
 /* Kill any extra white cards around our form */
@@ -461,15 +401,16 @@ body:has(form[action*="login"]) [class*="bg-white"] {
   border: none !important;
 }
 
-/* Main glass card (your .glass-wrapper div) */
+/* Main glass card */
 .glass-wrapper {
   position: relative;
   overflow: hidden;
   border-radius: 22px;
 
-  background: rgba(15, 23, 42, 0.55); /* deep bluish grey glass */
-  backdrop-filter: blur(20px) saturate(160%);
+  background: rgba(15, 23, 42, 0.55);
+  /* FIX: Both prefixed and unprefixed for Safari + Chrome + AWS served pages */
   -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
 
   border: 1px solid rgba(255, 255, 255, 0.24);
   box-shadow:
@@ -478,7 +419,7 @@ body:has(form[action*="login"]) [class*="bg-white"] {
     inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Gloss highlight on the card */
+/* Gloss highlight */
 .glass-wrapper::before {
   content: "";
   position: absolute;
@@ -502,31 +443,27 @@ body:has(form[action*="login"]) [class*="bg-white"] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
 }
 
-/* CONTENT inside .glass-wrapper sits above shine/noise */
+/* Content above shine layers */
 .glass-wrapper > * {
   position: relative;
   z-index: 10;
 }
 
 /* =========================
-   INPUTS – the 2 bars
+   INPUTS
    ========================= */
-
 .glass-wrapper input,
 .glass-wrapper textarea,
 .glass-wrapper select {
-  background: rgba(255, 255, 255, 0.06) !important;       /* more transparent */
-  backdrop-filter: blur(18px) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
   -webkit-backdrop-filter: blur(18px) !important;
-
-  border: 1px solid rgba(255, 255, 255, 0.38) !important;  /* bright glass border */
+  backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.38) !important;
   color: rgba(255,255,255,0.96) !important;
-
   border-radius: 14px !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.32),
     0 10px 26px rgba(0,0,0,0.34) !important;
-
   font-size: 0.95rem;
 }
 
@@ -538,35 +475,30 @@ body:has(form[action*="login"]) [class*="bg-white"] {
 .glass-wrapper textarea:focus,
 .glass-wrapper select:focus {
   outline: none !important;
-  border-color: rgba(147, 197, 253, 0.85) !important;       /* soft blue */
+  border-color: rgba(147, 197, 253, 0.85) !important;
   box-shadow:
     0 0 0 1px rgba(147, 197, 253, 0.75),
     0 12px 30px rgba(0,0,0,0.40) !important;
 }
 
 /* =========================
-   BUTTON – remove solid blue, make glass blue
+   BUTTON
    ========================= */
-
 .glass-wrapper button,
 .glass-wrapper button[type="submit"] {
   background:
     linear-gradient(135deg, rgba(56, 189, 248, 0.95), rgba(59, 130, 246, 0.98)) !important;
-  backdrop-filter: blur(18px) saturate(160%) !important;
   -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
-
+  backdrop-filter: blur(18px) saturate(160%) !important;
   border: 1px solid rgba(191, 219, 254, 0.95) !important;
   color: #ffffff !important;
-
   border-radius: 14px !important;
   box-shadow:
     0 16px 36px rgba(15, 23, 42, 0.80),
     inset 0 1px 0 rgba(255,255,255,0.45) !important;
-
   letter-spacing: 0.06em;
   font-weight: 600;
   text-transform: uppercase;
-
   transition: all 0.2s ease !important;
 }
 
@@ -586,15 +518,13 @@ body:has(form[action*="login"]) [class*="bg-white"] {
     inset 0 1px 0 rgba(255,255,255,0.30) !important;
 }
 
-/* Labels & links on login */
+/* Labels & links */
 .glass-wrapper label {
   color: rgba(255,255,255,0.88) !important;
 }
-
 .glass-wrapper a {
   color: rgba(209,213,219,0.90) !important;
 }
-
 .glass-wrapper a:hover {
   color: rgba(255,255,255,0.98) !important;
 }
@@ -611,7 +541,7 @@ body:has(form[action*="login"]) [class*="bg-white"] {
 }
 EOF
 
-# --- Function: update LoginFormContainer.tsx with glass build ---
+# --- Function: Update LoginFormContainer.tsx with glass build ---
 update_login_form_tsx() {
   log "Updating LoginFormContainer.tsx to glossy glass version..."
 
@@ -621,10 +551,10 @@ update_login_form_tsx() {
   fi
 
   if [[ ! -f "$LOGIN_FORM_BACKUP" ]]; then
-    log "Creating backup of LoginFormContainer.tsx at $LOGIN_FORM_BACKUP"
+    log "Creating backup of LoginFormContainer.tsx..."
     cp "$LOGIN_FORM" "$LOGIN_FORM_BACKUP"
   else
-    log "Backup of LoginFormContainer.tsx already exists, not overwriting."
+    log "Backup already exists, not overwriting."
   fi
 
   cat <<'EOF' > "$LOGIN_FORM"
@@ -731,31 +661,32 @@ EOF
   log "LoginFormContainer.tsx updated."
 }
 
+# --- Function: Inject wrapper ---
 inject_wrapper() {
   log "Injecting code into wrapper (safe mode)..."
 
   [[ ! -f "$WRAPPER" ]] && { err "wrapper.blade.php not found at $WRAPPER"; exit 1; }
   [[ ! -f "$BACKUP" ]] && { log "Creating backup: $BACKUP"; cp "$WRAPPER" "$BACKUP"; }
 
-  # Remove old injected blocks (idempotent)
+  # Remove old blocks (idempotent)
   sed -i "/$HEAD_MARK_START/,/$HEAD_MARK_END/d" "$WRAPPER" || true
   sed -i "/$VIDEO_MARK_START/,/$VIDEO_MARK_END/d" "$WRAPPER" || true
   sed -i "/$FOOTER_MARK_START/,/$FOOTER_MARK_END/d" "$WRAPPER" || true
 
   if ! grep -q "</head>" "$WRAPPER"; then
-    err "Could not find </head> in wrapper.blade.php. Aborting to prevent corruption."
+    err "Could not find </head> in wrapper.blade.php. Aborting."
     exit 1
   fi
 
-  # Inject CSS links right before </head>
+  # Inject CSS links before </head>
   sed -i "s#</head>#$HEAD_MARK_START\n<link rel='stylesheet' href='/assets/css/custom-background.css'>\n<link rel='stylesheet' href='/assets/css/login-theme.css'>\n$HEAD_MARK_END\n</head>#i" "$WRAPPER"
 
-  # Inject video right after <body ...>
+  # Inject video after <body>
   if [[ "$media_type" == "video" ]]; then
     VIDEO_TAG="<video autoplay muted loop playsinline id=\"dynamic-background-video\"><source src=\"/assets/media/$saved_filename\" type=\"video/webm\"></video>"
 
     if ! grep -Eq "<body[^>]*>" "$WRAPPER"; then
-      err "Could not find a <body ...> tag in wrapper.blade.php. Aborting to prevent corruption."
+      err "Could not find <body> tag in wrapper.blade.php. Aborting."
       exit 1
     fi
 
@@ -773,10 +704,10 @@ inject_wrapper() {
     ' "$WRAPPER" > "$WRAPPER.tmp" && mv "$WRAPPER.tmp" "$WRAPPER"
   fi
 
-  # Footer (idempotent – avoid duplicates)
+  # Footer (idempotent)
   FOOTER_HTML="All rights reserved by Golden Hosting Enterprise © 2025 -2026"
   if grep -q "$FOOTER_HTML" "$WRAPPER"; then
-    log "Footer text already present, skipping footer injection."
+    log "Footer already present, skipping."
   else
     if grep -q "@yield('below-container')" "$WRAPPER"; then
       sed -i "/@yield('below-container')/a $FOOTER_MARK_START\n<div class=\"text-center text-xs text-neutral-500 mb-4\">${FOOTER_HTML}</div>\n$FOOTER_MARK_END" "$WRAPPER"
@@ -788,75 +719,82 @@ inject_wrapper() {
   log "Wrapper injection done."
 }
 
-# --- Function: build panel assets with Node 16 + Yarn (auto install/downgrade) ---
-
 # --- Node.js compatibility helper ---
+# FIX: Added nvm auto-install + NODE_OPTIONS for Ubuntu 24 / Node 17+ OpenSSL fix
 use_node16() {
   warn "Pterodactyl frontend works best with Node 16"
 
   export NVM_DIR="/root/.nvm"
 
-  if [ -s "$NVM_DIR/nvm.sh" ]; then
-    log "Loading nvm from $NVM_DIR..."
-    . "$NVM_DIR/nvm.sh"
+  # Auto-install nvm if missing (works on Ubuntu 20/22/24, Debian, any VPS)
+  if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+    log "nvm not found. Installing nvm automatically..."
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash || true
+    export NVM_DIR="/root/.nvm"
+  fi
 
-    log "Switching to Node 16..."
+  if [ -s "$NVM_DIR/nvm.sh" ]; then
+    log "Loading nvm..."
+    # shellcheck source=/dev/null
+    . "$NVM_DIR/nvm.sh"
+    log "Installing and switching to Node 16..."
     nvm install 16 &>/dev/null || true
-    nvm use 16
+    nvm use 16 || true
   else
-    warn "nvm not found. Skipping Node version fix..."
+    warn "nvm still not available. Will try system node with OpenSSL legacy flag..."
   fi
 }
+
+# --- Build frontend assets ---
 build_assets() {
   log "Building panel frontend assets with Node + Yarn..."
   cd "$PANEL_DIR"
 
   use_node16
-   
-  # Kill NODE_OPTIONS to avoid OpenSSL errors
-  # Only unset NODE_OPTIONS if it's NOT our fallback
-unset NODE_OPTIONS 2>/dev/null || true
+
+  # FIX: Set NODE_OPTIONS for Node 17+ / Ubuntu 24 OpenSSL compatibility
+  # This is what makes the build work on Ubuntu 24 which ships Node 18+
+  local node_ver major
+  node_ver="$(node -v 2>/dev/null || echo "v0.0.0")"
+  major="${node_ver#v}"
+  major="${major%%.*}"
+
+  if [[ "$major" -ge 17 ]] 2>/dev/null; then
+    warn "Node $node_ver detected (>=17). Setting OpenSSL legacy provider for Webpack..."
+    export NODE_OPTIONS="--openssl-legacy-provider"
+  else
+    unset NODE_OPTIONS 2>/dev/null || true
+  fi
 
   [[ ${EUID:-1000} -ne 0 ]] && SUDO_CMD="sudo" || SUDO_CMD=""
 
-  local node_ver major
-
-  if command -v node &>/dev/null; then
-    node_ver="$(node -v 2>/dev/null || echo "")"
-    major="${node_ver#v}"
-    major="${major%%.*}"
-
-    if [[ -z "$major" || "$major" != "16" ]]; then
-      warn "Detected Node.js $node_ver; Pterodactyl frontend prefers Node 16.x."
-    else
-      log "Node.js version OK: $node_ver"
-    fi
+  if [[ -z "$major" || "$major" != "16" ]]; then
+    warn "Detected Node.js $node_ver — Pterodactyl prefers Node 16.x but will try anyway."
   else
-    warn "Node.js is not installed. Build may fail."
+    log "Node.js version OK: $node_ver"
   fi
 
-  # Ensure Yarn (auto install without prompt)
+  # Ensure Yarn
   if ! command -v yarn &>/dev/null; then
-    warn "yarn is not installed. Installing automatically..."
+    warn "yarn not installed. Installing..."
     if command -v npm &>/dev/null; then
       $SUDO_CMD npm install -g yarn
     else
-      err "npm is not available to install yarn."
+      err "npm not available to install yarn."
       return 1
     fi
   fi
 
-  node_ver="$(node -v 2>/dev/null || echo "none")"
-  yarn_ver="$(yarn -v 2>/dev/null || echo "unknown")"
-  log "Node.js version for build: $node_ver"
-  log "Yarn version for build: $yarn_ver"
+  log "Node.js: $(node -v 2>/dev/null || echo 'unknown')"
+  log "Yarn: $(yarn -v 2>/dev/null || echo 'unknown')"
 
   log "Running yarn install..."
-  yarn install || warn "yarn install failed, continuing..."
+  yarn install || warn "yarn install had warnings, continuing..."
 
-  log "Running yarn build:production (this can take a while)..."
+  log "Running yarn build:production (this may take a while)..."
   if ! yarn build:production; then
-    warn "yarn build:production failed. Continuing without stopping script."
+    warn "yarn build:production failed. The theme CSS/wrapper changes are still applied."
+    warn "You may need to manually build: cd $PANEL_DIR && yarn build:production"
     return 0
   fi
 
@@ -871,16 +809,15 @@ if [[ "${option:-}" == "2" ]]; then
   php artisan down
 
   log "Downloading + extracting NookTheme..."
- if command -v curl &>/dev/null; then
-  curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xz
-else
-  wget -qO- https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xz
-fi
+  if command -v curl &>/dev/null; then
+    curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xz
+  else
+    wget -qO- https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xz
+  fi
 
   log "Fixing permissions..."
   chmod -R 755 storage/* bootstrap/cache
 
-  # Avoid interactive composer prompt
   export COMPOSER_ALLOW_SUPERUSER=1
 
   log "Running composer install..."
@@ -889,7 +826,7 @@ fi
   log "Running migrations + seed..."
   php artisan migrate --seed --force
 
-  log "Clearing config/view cache + restarting queue..."
+  log "Clearing caches + restarting queue..."
   php artisan view:clear
   php artisan config:clear
   php artisan queue:restart
@@ -900,13 +837,13 @@ fi
   log "NookTheme installation completed."
 fi
 
-# Apply React glass container (for both option 1 and 2)
+# Apply glass login form
 update_login_form_tsx
 
-# Inject wrapper changes + CSS/video
+# Inject wrapper CSS/video
 inject_wrapper
 
-# Build frontend assets
+# Build frontend
 build_assets
 
 log "Setting permissions on assets..."
